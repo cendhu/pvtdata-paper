@@ -1,28 +1,86 @@
-\section{Background: Hyperledger Fabric}
+\section{Background and Motivation}
 some text \ldots
 
-\subsection{Key Components}
+\subsection{Architecture of Hyperledger Fabric}
+some text \ldots
+
+\par
+\textbf{(1) Endorsement Phase.} some text \ldots
+
+\par
+\textbf{(2) Ordering Phase.} some text \ldots
+
+\par
+\textbf{(3) Validation Phase.} some text \ldots
+
+\par
+\textbf{(4) Commit Phase.} some text \ldots
+
+\subsection{Motivation for Data Privacy}
+\par
+some text \ldots
+\subsubsection{Use Case Study: Food Traceability}
+In September 2006, there was an outbreak of food-borne illness caused by Escherichia coli~\cite{ecoil}
+bacteria in 26 U.S. states. This outbreak was linked to bagged spinach. By October 6, 2006, 199 people had been
+infected, including three people who died and 31 who suffered kidney failure. It took regulators two
+weeks to conduct the backtrace and determine the exact source of the outbreak. During those two weeks,
+many people got sick and tons of good spinach was unnecessarily discarded---wrongfully
+wasted because we could not tell the good spinach from the bad~\cite{blockchain-for-business}.
+An efficient food traceability mechanism is the key to reduce the backtrace time in such a scenario.
+Traceability is the ability to track and record the movement of food products throughout a supply chain, which
+includes growing, harvesting, packing, manufacturing, repacking, storage, distribution, and sale to the consumer.
+With these information, it is possible to trace backward in the supply chain (usually to find the source of a
+problem) as well as trace forward (usually to do a recall of contaminated products).
+\par
+Food Standards Australia New Zealand (FSANZ)~\cite{}, European Commission's food safety policy~\cite{}, and Food and Agriculture
+Organization of United Nations (FAO)~\cite{} provide various guidelines~\cite{} on what records need be kept in order to enable
+food traceability. The following are some of the records:
+\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+	\item name and address (and other contact details) of suppliers/farmers and a description of products or inputs supplied.
+	\item the name and contact information of the transporter and a description of products transpoted.
+	\item name and addresses (and other contact details) of customers and a description of the product supplied to them.
+    \item date of transaction or delivery.
+    \item batch or lot identification (or other markings such as product ID).
+    \item volume or quantity of product supplied or received.
+	\item raw materials used.
+	\item conservation and storage methods for the product.
+\end{enumerate}
+As a result, when an outbreak of food-borne illness occurrs, it would be possible to traceback from the customer
+to product ID to the supplier/farmer. Similarly, a recall can be performed by tracing forward from the supplier/farmer
+to product lot to customers. If these records are kept in the form of papers or in a centralized database, during
+an outbreak, a lot of communication needs to happen between various food business operators to perform traceback
+or traceforward. Such a method is very inefficient, time consuming, and expensive. Hence, a blockchain based food traceability
+solution is needed for food safety, to improve efficiency, to allow us to easily communicate information that customers
+are asking for (i.e., fork to farm), and to help autheticate claims made in a product. With blockchain, network members
+can track the food products as they travel from farm to fork. Recently, Walmart did an experiment that traced
+the origin of sliced mangos from Walmart stores back to the farm. This process showed a radical improvement from
+approximately seven days it took to conduct the backtrace by using traditional methods down to 2.2
+seconds~\cite{7-to-2, walmart-hf} using Hyperledger Fabric.
+\par
+As blockchain is a replicated ledger, storing all information related to a food supply chain could leak
+proprietary or business competitive information. For example, invoice details cannot be shared as it could leak
+the business contract between the farmer and the distributor or the distributor and the transporter. As customer
+contact details are very sensitive, it is not advisable to store it in the replicated ledger. Figure~\ref{} shows
+the actors involved in a food traceability blockchain network along with different interaction between them.
+\\
+TODO: \\
+(1) Add a figure. \\
+(2) Explain the transaction flow between various actors. \\
+(3) What data are sensitive within a transaction. \\
+\subsubsection{Existing Solutions and Drawbacks}
 some text \ldots
 \par
-\textbf{Client.} some text \ldots
-
-\par
-\textbf{Peer.} some text \ldots
-
-\par
-\textbf{Ordering Service.} some text \ldots
-
-\subsection{Transaction Flow}
+\textbf{(1) Fabric Channel.}
 some text \ldots
 \par
-\textbf{Endorsement Phase.} some text \ldots
-
+\textbf{(2) Quorum~\cite{} Private Transaction.}
+some text \ldots
 \par
-\textbf{Ordering Phase.} some text \ldots
-
+\textbf{(3) Encryption of Data.}
+some text \ldots
 \par
-\textbf{Validation Phase.} some text \ldots
-
+\textbf{(4) Off-chain Storage With an On-chain Proof.}
+some text \ldots
 \par
-\textbf{Commit Phase.} some text \ldots
-
+\textbf{(5) Zero Knowledge Proof.}
+some text \ldots
