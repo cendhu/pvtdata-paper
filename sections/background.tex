@@ -15,11 +15,10 @@ some text \ldots
 
 \par
 \textbf{(4) Commit Phase.} some text \ldots
-
 \subsection{Motivation for Data Privacy}
 \par
 some text \ldots
-\subsubsection{Use Case Study: Food Traceability}
+\subsubsection{Use Case Study 1: Food Traceability}
 In September 2006, there was an outbreak of food-borne illness caused by Escherichia coli~\cite{ecoil}
 bacteria in 26 U.S. states. This outbreak was linked to bagged spinach. By October 6, 2006, 199 people had been
 infected, including three people who died and 31 who suffered kidney failure. It took regulators two
@@ -31,7 +30,26 @@ Traceability is the ability to track and record the movement of food products th
 includes growing, harvesting, packing, manufacturing, repacking, storage, distribution, and sale to the consumer.
 With these information, it is possible to trace backward in the supply chain (usually to find the source of a
 problem) as well as trace forward (usually to do a recall of contaminated products).
-\par
+\begin{figure}
+    \begin{center}
+	    \includegraphics[scale=0.42]{fig/fsc.pdf}
+  		\vspace{-.6cm}
+		\caption{\small{Actors involved in a simplified food supply chain}.}
+	    \label{fig:fsc}
+ \end{center}
+  \vspace{-.5cm}
+\end{figure}
+\begin{figure}
+    \begin{center}
+	    \includegraphics[scale=0.42]{fig/food-supply-chain-tx-flow.pdf}
+  		\vspace{-.6cm}
+		\caption{\small{A sample transaction flow in a blockchain based chocolate supply chain network where
+						all information pertaining to a transaction is visible in a replicated ledger}.}
+	    \label{fig:tx-flow-fsc}
+ \end{center}
+  \vspace{-.5cm}
+\end{figure}
+% \par
 Food Standards Australia New Zealand (FSANZ)~\cite{fs}, European Commission's food safety policy~\cite{eu-foodsafety},
 and Food and Agriculture Organization of United Nations (FAO)~\cite{fao-traceability} provide various guidelines on what
 records need be kept in order to enable food traceability. The following are some of the records:
@@ -58,63 +76,62 @@ the origin of sliced mangos from Walmart stores back to the farm. This process s
 approximately seven days it took to conduct the backtrace by using traditional methods down to 2.2
 seconds~\cite{7-to-2, walmart-hf} using Hyperledger Fabric.
 \par
-\begin{figure}
-    \begin{center}
-	    \includegraphics[scale=0.42]{fig/fsc.pdf}
-  		\vspace{-.6cm}
-		\caption{\small{Actors involved in a simplified food supply chain}.}
-	    \label{fig:fsc}
- \end{center}
-  \vspace{-.5cm}
-\end{figure}
 Figure~\ref{fig:fsc} shows actors involved in a simplified chocolate bars supply chain. For manufacturing a
 chocolate bar, cacao and milk are required (assume a sugar free chocolate). Usually, manufacturers
 buy raw materials from supplier rather than directly contacting various farmers. Once chocolate bars are produced,
 via distributors, it would be sent to various retailers across the globe so that the chocolate bars can be sold
 to customers. Note that distribution involes import/export authorities, customs and other entities. For simplicity,
 we do not cover all involved actors.
-\begin{figure}
-    \begin{center}
-	    \includegraphics[scale=0.42]{fig/food-supply-chain-tx-flow.pdf}
-  		\vspace{-.6cm}
-		\caption{\small{A sample transaction flow in a chocolate supply chain}.}
-	    \label{fig:tx-flow-fsc}
- \end{center}
-  \vspace{-.5cm}
-\end{figure}
 Figure~\ref{fig:tx-flow-fsc} shows a sample business process in a chocolate supply chain. The process involves
 order placement, invoice creation, shipping arrangement, delivery, and proof of payment. The whole process
-can be implemented using a permissioned blockchain platform with the help of smart-contracts.
-As blockchain is a replicated ledger, storing all information related to above process could leak
-proprietary or business competitive information. For example, invoice details cannot be shared as it could leak
-the business contract between the farmer and the supplier or the distributor and the retailer. As customer
-contact details are very sensitive, it is not advisable to store it in the replicated ledger. However, storing
-these details in a blockchain could help in resolving disputes and also it enables a tamper proof record
-management for food traceability.
+can be implemented using a permissioned blockchain platform with the help of smart-contracts. Given that the
+transaction details are stored in a replicated ledger, it helps in resolving disputes and also it enables a
+tamper proof record management for food traceability.
 \par
-For food traceability, actors don't need to store private/sensitive data in the replicate ledger instead can share information
-on demand during an outbreak of food-borne illness. Further, storing the hash of private/sensitive data in the replicated
-ledger would help in resolving disputes and tamper proof record management. Assume that a lot of customers are feeling ill due
-to a food-borne disease, the food authority needs to find the list of food products each of these customers bought and then
-trace it backward in the supply chain to start investigating the root cause. Similarly, it is easy for the actors to trace it
-forward to recall potentially contaminated products.
+\textbf{Data Privacy Violation.}\textit{
+		Storing all information related to above process in a replicated ledger could leak
+proprietary or business competitive information. For example, invoice details cannot be shared as it could leak
+the business contract between the farmer and the supplier or the distributor and the retailer.}
+% As customer
+% contact details are very sensitive, it is not advisable to store it in the replicated ledger.
+% \par
+% For food traceability, actors don't need to store private/sensitive data in the replicate ledger instead can share information
+% on demand during an outbreak of food-borne illness. Further, storing the hash of private/sensitive data in the replicated
+% ledger would help in resolving disputes and tamper proof record management. Assume that a lot of customers are feeling ill due
+% to a food-borne disease, the food authority needs to find the list of food products each of these customers bought and then
+% trace it backward in the supply chain to start investigating the root cause. Similarly, it is easy for the actors to trace it
+% forward to recall potentially contaminated products.
+\subsubsection{Use Case Study 2: Patient-Centric Healthcare}
+In healthcare, a practitioner does not have access to all medical records of a patient. This is because the Electronic
+Medical Record (EMR) systems assume that a patient sees only practitioners in one clinic. However, the reality is that
+on average a patient in US sees 18.7 different practitioners/clinics during his/her lifetime. As existing EMR systems are
+clinic-centric, there is no interest to interoperate or share data with other clinics due to competitions. As a result,
+patient's EMR are trapped in different island which creates hurdle to execute personalized healthcare. Further, a clinic-centric
+delivery model using the current framework of existing technologies results in a lack of transparency and trust. A
+practitioner can provide a wrong treatment and later tamper the EMR to hide his mistakes given that the EMR system is managed
+at the clinic. To overcome these problem, we need a blockchain based solution to bring back trust and to provide the ownership
+of EMR to the patient.
+\par
+There is a growing concern in insurance industry on increasing number of health care insurance fraud. The FBI estimates that
+Health Care Fraud costs American tax payers \$80 billion a year. The following are the commonly committed frauds:
+(1) duplicate and inflated bills; (2) manipulating pre-policy health check-up records; (3) inflated billing,
+billing for services not provided; (4) Unwarranted procedures, excessive investigations, expensive medicines;
+(5) Over utilisation, extended length of stay; (6) Fudging records, patient history to name a few. To resolve some of these
+problems, we need a blockchain based solution where hospital can share the EMRs, i.e., a detailed history of the patient,
+treatment provided along with the invoices directly to the insurance providers. Given that the information are shared
+using a replicated and immutable ledger, the number of fraudulent event would reduce.
+\par
+\textbf{Data Privacy Violation.} \textit{Sharing of sensitive data
+		such as EMR of a patient in a replicated ledger is usually unacceptable as it leaks private information about
+		a patient. Further, there are many laws including HIPAA privacy rule~\cite{} that ask the hospital to protect
+		the patient's privacy.}
 \begin{figure}
     \begin{center}
-	    \includegraphics[scale=0.42]{fig/fsc-private-data.pdf}
-  		\vspace{-.6cm}
-		\caption{\small{Private data should not be shared with all participants as it could leak business contracts or other proprietary information}.}
+			\includegraphics[scale=0.42]{fig/health-care.pdf}
+  		\vspace{-.4cm}
+		\caption{\small{A blockchain based patient-centric health care management system where the health care records are
+						visible in a replicated ledger and the read-write access is controlled by the patients}.}
 	    \label{fig:fsc-pvt-data}
  \end{center}
-  \vspace{-.5cm}
+  \vspace{-.3cm}
 \end{figure}
-\subsubsection{Existing Solutions and Drawbacks}
-\par
-\textbf{(1) Fabric Channel.}
-\par
-\textbf{(2) Quorum~\cite{} Private Transaction.}
-\par
-\textbf{(3) Encryption of Data.}
-\par
-\textbf{(4) Off-chain Storage With an On-chain Proof.}
-\par
-\textbf{(5) Zero Knowledge Proof.}

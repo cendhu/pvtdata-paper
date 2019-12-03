@@ -7,7 +7,7 @@
 \documentclass{vldb}
 % \renewcommand{\baselinestretch}{0.99}
 \usepackage{graphicx}
-\usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+% \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
 \usepackage{enumitem}
 \usepackage{hyperref, xcolor}
 \hypersetup{colorlinks, citecolor=blue}
@@ -28,21 +28,21 @@
 \usepackage{cleveref}
 \usepackage{soul}
 
-\crefformat{section}{\S#2#1#3} % see manual of cleveref, section 8.2.1
-\crefformat{subsection}{\S#2#1#3}
-\crefformat{subsubsection}{\S#2#1#3}
+% \crefformat{section}{\S#2#1#3} % see manual of cleveref, section 8.2.1
+% \crefformat{subsection}{\S#2#1#3}
+% \crefformat{subsubsection}{\S#2#1#3}
 
 \usepackage{url}
-\usepackage{balance}
+% \usepackage{balance}
 
-\newcommand\longvar[1]{\mathchardef\UrlBreakPenalty=100
-	\mathchardef\UrlBigBreakPenalty=100\url{#1}}
+% \newcommand\longvar[1]{\mathchardef\UrlBreakPenalty=100
+% 	\mathchardef\UrlBigBreakPenalty=100\url{#1}}
 
-\makeatletter
-\newcommand{\printfnsymbol}[1]{%
-  \textsuperscript{\@fnsymbol{#1}}%
-}
-\makeatother
+% \makeatletter
+% \newcommand{\printfnsymbol}[1]{%
+%   \textsuperscript{\@fnsymbol{#1}}%
+% }
+% \makeatother
 
 % Include information below and uncomment for camera ready
 \vldbTitle{Enabling Data Privacy in Hyperledger Fabric}
@@ -51,7 +51,7 @@
 \vldbVolume{}
 \vldbNumber{}
 \vldbYear{}
-\balance
+% \balance
 
 \usepackage{nopageno}
 % allow hypenation at random places
