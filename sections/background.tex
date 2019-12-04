@@ -2,19 +2,127 @@
 some text \ldots
 
 \subsection{Architecture of Hyperledger Fabric}
-some text \ldots
-
+\label{hf}
+Hyperledger Fabric consists of three entities---client,
+peer, and orderer. The transaction flow in Fabric
+involves all three entities and composes of four phases---
+simulation, ordering, validation, and commit, as depicted
+in Figure~\ref{fig:txflow}. Figure~\ref{fig:peer} shows the various components in a
+peer, which involves in the execution of simulation, validation, and commit phase. The
+communication between different entities happens via google
+remote procedure call (gRPC)~\cite{grpc}.
+% Note that the RPC is used between
+% the peer and smart-contracts to support contract written in
+% multiple languages such as nodejs~\cite{nodejs}, java~\cite{java}, and
+% golang~\cite{golang}.
 \par
-\textbf{(1) Endorsement Phase.} some text \ldots
-
+\textbf{Phase 1---Simulation.} A client submits a transaction proposal to a peer to invoke a
+smart-contract which implements the transaction logic. %On receiving a transaction proposal,
+The \textit{endorser} validates
+and passes the input present in the proposal message to the
+appropriate \textit{smart-contract}. Depending on the input,
+the \textit{smart-contract} executes the logic and reads/writes the states it
+manages by issuing \texttt{\small{GetState()}}, \texttt{\small{PutState()}}, \&
+\texttt{\small{GetStateByRange()}} calls back to the \textit{endorser}. For a read
+request, i.e., \texttt{\small{GetState()}}, the \textit{endorser} reads the state
+from the \textit{state DB} and adds it to the read set of the transaction maintained
+at the \textit{endorser} before passing it to the \textit{smart-contract}.
+For a write request, i.e., \texttt{\small{PutState()}}, the \textit{endorser} stores
+the value in the write set of the transaction without modifying the
+\textit{state DB}. For a range read query, i.e., \texttt{\small{GetStateByRange()}}
+with a \textit{start} and \textit{end} key, the \textit{endorser} returns an iterator to
+the smart-contract. By calling the \texttt{\small{Next()}} on the iterator, the smart-contract
+reads states. Instead of storing these states in the read set, the \textit{endorser}
+stores the \textit{start} key, \textit{end} key, and a list of keys read in a separate
+data structure called \textit{range query info}. Once the transaction execution completes,
+the \textit{endorser} cryptographically signs/endorse the transaction response
+(which includes the transaction proposal, read-write set, and range query info)
+before sending it to the client.
 \par
-\textbf{(2) Ordering Phase.} some text \ldots
-
+The client can submit the
+transaction proposal to multiple peers simultaneously depending upon the
+endorsement policy~\cite{endorsement1}
+defined for the \textit{smart-contract}. For example, the \texttt{OR}(\textit{OrgA.peer},
+\texttt{AND}(\textit{OrgB.peer}, \textit{OrgC.peer})) policy requires either a signature
+from organization A's peer or two signatures, i.e., from organization B's and organization C's peer.
+Each \textit{smart-contract} maintains its states. One \textit{smart-contract}
+can access/modify states maintained by another contract by invoking it. A
+\textit{smart-contract} invoking another enables the application designer
+to split a monolithic contract into multiple micro contracts,
+each performing a specific task.
+\begin{figure}
+    \begin{center}
+	    \includegraphics[scale=0.45]{fig/tx-flow.pdf}
+  		\vspace{-.7cm}
+		\caption{\small{Transaction flow in Hyperledger Fabric}}
+	    \label{fig:txflow}
+ \end{center}
+  \vspace{-.4cm}
+\end{figure}
 \par
-\textbf{(3) Validation Phase.} some text \ldots
-
+\textbf{Phase 2---Ordering.} 
+%Once a client collects the required endorsements for the transaction,
+The client submits the endorsed transaction response to the ordering
+service. An ordering service, which consists of orderer nodes from different
+organizations, employs consensus protocol~\cite{raft} to order the received
+transactions and create a block. Each block has a sequence number called
+\textit{block number}, the hash of the previous block, the hash of the current block,
+a list of ordered transactions (i.e., commit order), and the orderer's
+signature. The orderer nodes broadcast the created block to peers.
 \par
-\textbf{(4) Commit Phase.} some text \ldots
+\textbf{Phase 3---Validation.} The \textit{gossip} component of the peer
+receives blocks and stores them in a \textit{block queue}. The peer 
+verifies the following two conditions per transaction in a block before committing
+them: (1) collected
+endorsements satisfies the endorsement policy specified for the smart-contract;
+(2) transaction is serializable. The \textit{endorsement policy validator} verifies
+the endorsements against the endorsement policy by checking whether the set of
+signatures on the transaction response is signed by the set of organizations
+specified in the endorsement policy. If a transaction invoked multiple smart-contracts
+(via a feature that allows a smart-contract to invoke another),
+the policy of each of the smart-contract must be satisfied. A transaction is marked
+invalid when it does not have adequate endorsements.
+\par
+Once the \textit{policy validator} validates all transactions, the \textit{serializability validator} applies optimistic
+concurrency control (OCC)~\cite{occ} using the read-write set present in the
+transaction response of valid transactions. To facilitate OCC, the Fabric adds a version identifier
+to each state stored in the blockchain. The version for a state is nothing but
+a combination of a block number and the transaction number within the block
+which last updated/created the state.
+All the validator checks for is if the state that a transaction has read, to decide on
+its write-set, have not been modified by preceeding valid transactions in
+the block and already committed transactions. Further, the validator re-executes
+range queries present in the \textit{range query info} to detect any phantom read
+as it violates serializability property.
+% \par
+Note that the \textit{policy validator} parallelly validates transactions
+in a block whereas the \textit{serializability validator} serially validates each
+transaction %in the order they appear in the block
+such that it can take into account of write-set of previous valid transactions within the block while executing OCC.
+\begin{figure}
+    \begin{center}
+			\includegraphics[scale=0.35]{fig/peer.pdf}
+  		\vspace{-.7cm}
+		\caption{\small{Various components in peer involved in simulation, validation, and commit phase.}}
+		\label{fig:peer}
+ \end{center}
+  \vspace{-.6cm}
+\end{figure}
+% The number of workers used for \textit{policy} and \textit{serializability validator}
+% is equal to the number of vCPUs allocated to the peer and one worker, respectively.
+\par
+\textbf{Phase 4---Commit.} After the validation phase,
+first, the \textit{committer} stores the block in the \textit{block
+store}, which is a chain of blocks stored in a file system along with the
+transaction validity information. Second, the \textit{committer} applies the write
+set of all valid transactions to the \textit{state database}, which maintains
+all active states. Third, it stores all valid and invalid transactions' write set to the
+\textit{history database}, which maintains both active and inactive states. The disk
+writes to \textit{block store}, \textit{state DB}, and \textit{history DB} are serial and
+synchronous to handle recovery after a failure. Note that the \textit{history DB} only
+maintains an index in the form of state to a list of \{\textit{block number},
+\textit{transaction number} within the block\} such that the actual history of each
+state can be retrieved from the \textit{block store} using the transaction's write-set.
 \subsection{Motivation for Data Privacy}
 \par
 some text \ldots
