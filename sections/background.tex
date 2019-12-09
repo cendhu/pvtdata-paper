@@ -1,6 +1,4 @@
 \section{Background and Motivation}
-some text \ldots
-
 \subsection{Architecture of Hyperledger Fabric}
 \label{hf}
 Hyperledger Fabric consists of three entities---client,
@@ -124,9 +122,14 @@ maintains an index in the form of state to a list of \{\textit{block number},
 \textit{transaction number} within the block\} such that the actual history of each
 state can be retrieved from the \textit{block store} using the transaction's write-set.
 \subsection{Motivation for Data Privacy}
-\par
-some text \ldots
-\subsubsection{Use Case Study 1: Food Traceability}
+In this section, we motivate the need for providing data privacy in a blockchain network
+by introducing the following three use-cases: (1) food traceability, (2) patient-centric health-care,
+and (3) identity documents and certificates management. Each of these use-case solves
+a real-world problem using blockchain technology. However, due to lack of support
+for data privacy in existing blockchain technologies, some sensitive information could be
+leaked. To enable widespread adoption of blockchain, it is necessary to introduce mechanism to
+preserve privacy of sensitive data.
+\subsubsection{Food Traceability}
 In September 2006, there was an outbreak of food-borne illness caused by Escherichia coli
 bacteria~\cite{ecoil} in 26 U.S. states. This outbreak was linked to bagged spinach. By October 6, 2006, 199 people had been
 infected, including three people who died and 31 who suffered kidney failure. It took regulators two
@@ -210,7 +213,7 @@ the business contract between the farmer and the supplier or the distributor and
 % to a food-borne disease, the food authority needs to find the list of food products each of these customers bought and then
 % trace it backward in the supply chain to start investigating the root cause. Similarly, it is easy for the actors to trace it
 % forward to recall potentially contaminated products.
-\subsubsection{Use Case Study 2: Patient-Centric Health-Care}
+\subsubsection{Patient-Centric Health-Care}
 In health-care, a practitioner does not have access to all medical records of a patient. This is because the Electronic
 Medical Record (EMR) systems assume that a patient sees only practitioners in one hospital. However, the reality is that
 on average a patient in the US sees 18.7 different practitioners/hospitals during his/her lifetime~\cite{}. As existing EMR systems are
@@ -247,3 +250,39 @@ standardizing the EMR data format.
  \end{center}
   \vspace{-.3cm}
 \end{figure}
+
+\begin{figure}
+    \begin{center}
+			\includegraphics[scale=0.42]{fig/identity.pdf}
+  		\vspace{-.4cm}
+		\caption{\small{A blockchain based documents and certificate issuance system where all data are
+						stored in an immutable replicated ledger and the read-write access is controlled by the individual
+						who owns those data}.}
+		\label{fig:health-care}
+ \end{center}
+  \vspace{-.3cm}
+\end{figure}
+\subsubsection{Identity and Diploma Certificate Management}
+In 2018, nearly 14.4 million people in the US were impacted by some form of identity theft according to a survey conducted by
+Javelin Strategy and Research~\cite{}. Such frauds costed \$1.7 billion in total for victims. The stoled identities were used
+to takeover existing accounts and open new accounts for loan and mortages, which results in a financial loss for the victims.
+According to interpol~\cite{}, criminals make fake identities to carry out their illegal activities. Criminals use counterfeit and
+forged identity or travel document as well as genuine identity or travel document which was acquired using other
+counterfeit documents. Hence, there is a need to digitalize the identity and documents to avoid such frauds.
+\par
+Fradulent diploma certificates have become a global phenomemon due to the rising demand of qualification requirement
+in the job market~\cite{}. Based on national data in US, 6\% of bachelor degrees and 35\% of associate degrees are fake~cite{}.
+Due to lack of transparency and digitalization of degree certificates by universities, the companies need to trust
+the employee, and notraries. Hence, it is easily possible to produce and present fake diplomas. 
+\par
+To tackle the above-mentioned problems, a blockchain-based solution can be used to issue certificates and to verify issued
+certificates. Figure~\ref{} shows actors involved in such a blockchain solution. The issuing authorities store the documents such
+as birth certificates, passport, driving license, diploma certificates directly into the blockchain. These documents are owned
+by the respective individual and can control the access permission. The consumers of documents and certificates can get the
+permission from the individual and verify the document for various purpose such as KYC, verification of qualification, etc...
+\par
+\textbf{Data Privacy Violation.}\textit{
+		Storing all sensitive document such as passport, diploma certificates in a replicated ledger could leak
+		a lot of personal information about the individual.}
+
+
