@@ -1,36 +1,6 @@
-\section{Design of Privacy Enabled Ledger}
-\par
-\textbf{Key Idea.}
-
-\par
-\textbf{Requirements.}
-
-\subsection{Private Data Collections}
-\begin{figure}
-    \begin{center}
-	    \includegraphics[scale=0.42]{fig/fsc-private-data.pdf}
-  		\vspace{-.4cm}
-		\caption{\small{The private/sensitive data is visible only to the appropriate parties and the proof of data existance is stored
-						in a replicated ledger along with necessary information needed to enable traceability}.}
-	    \label{fig:fsc-pvt-data}
- \end{center}
-  \vspace{-.5cm}
-\end{figure}
-
-\begin{figure}
-    \begin{center}
-			\includegraphics[scale=0.42]{fig/health-care-private-data.pdf}
-  		\vspace{-.4cm}
-		\caption{\small{The private/sensitive data is maintained at the node of each individual hospital's node and the proof of data
-						existance is stored in a replicated ledger along with necessary information needed to share data on a need-to-know basis}.}
-	    \label{fig:fsc-pvt-data}
- \end{center}
-  \vspace{-.5cm}
-\end{figure}
-
-\par
-
-\subsection{Transaction Simulation}
+\section{Design of Private Data Collections}
+\subsection{Transaction Flow}
+\subsubsection{Transaction Simulation}
 \par
 \textbf{Transient Data in Transaction Proposal.}
 \par
@@ -40,7 +10,7 @@
 \par
 \textbf{Private Data Dissemination.}
 
-\subsection{Transaction Validation and Commit}
+\subsubsection{Transaction Validation and Commit}
 \par
 \textbf{Policy Validation.}
 \par
@@ -60,20 +30,6 @@
 
 \subsection{Failure and Recovery}
 \par
-
-\subsection{Collection ACL}
-\par
-\textbf{(1) Members Only Read-Write.} 
-\par
-\textbf{(2) Members Only Write and All Can Read.}
-\par
-\textbf{(3) Members Only Read and All Can Write.}
-\par
-\textbf{(4) All Can Read-Write.}
-
-\subsection{Moving Data Between Collections}
-\par
-
 
 \subsection{Fork Detection and Ledger Rollback}
 \par
