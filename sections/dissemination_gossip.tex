@@ -1,0 +1,8 @@
+One can think of the data corresponding to  a transaction as being split to two parts: (a) a public part which ends up being in the block and is comprised of the public read-write set and the hashed read-write set, and (b) a private part which consists of the pre-images to the hashed writes that does not end up inside the block.
+
+Prior to the transaction being sent to be included in a block, the pre-images are being locally stored on the peers that take part in executing the transaction. \yacov{this breaks abstraction, but I don't see a way out of this}
+Clearly, peers that did not take part in executing the transaction need to obtain the pre-images in some way for the private data to be available to the application. 
+
+While relying on fetching data from peers that possess the pre-images upon demand is possible, it is not a fault tolerant approach since if the peers that possess the pre-images are unreachable or crash, the private data is forever lost and as a result, user experience is impaired. 
+
+To that end, in addition to storing the pre-images locally, each peer also disseminates them to a random set of remote peers. The set is selected by applying the policy that defines the collection membership on the set of peers that are considered alive at that time, filtering out non-eligible peers and then taking a random subset of the result. \\The peers that receive the pre-images, store them locally and then return acknowledgments without which the transaction is not sent to be included in a block. This is done to ensure the pre-images will be available at a later point in time in spite of faults, but can also be tuned and relaxed upon demand. 
