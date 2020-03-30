@@ -7,6 +7,28 @@
 \par
 \textbf{Hashed, and Private Read Write Set.}
 \\ Owner: Manish
+
+\par
+While simulating a transaction, in addition to the read-write set for the public data, 
+we generate another read-write set for the hashes of the private data referred to as \textit{hashed read-write set}.
+Further, we produce a separate write-set for each private data collection that the transaction modifies. We refer to this write-set as \textit{private write-set}.
+A private write-set contains only writes for the private data for a specific collection.
+
+\par
+During simulation of a transaction, for each key in a private data collection that the transaction reads,
+we add a tuple <collection name, hash of the key, version of the hash of the key> to the hashed read-set.
+Further, for each key in a private data collection that the transaction creates or modifies, 
+we add a tuple <collection name, hash of the key, hash of the new value>
+to the hashed write-set and in addition, we add a tuple <pre-images of the private key, pre-images of the new value>
+to the collection specific private write-set.
+
+Thus, we generate one public read-write set, one hashed read-write set and one or more private write-sets for a simulation of a transaction.
+
+\par
+Like the public read-write set, we package the hashed read-write set with the transaction data inside the block. However, we share
+each private write-sets associated with the transaction with only blockchain nodes that belong to the organizations
+that are member of the corresponding private data collection.
+
 \par
 \textbf{Transient Store.}
 \\ Owners: Artem/Yacov
