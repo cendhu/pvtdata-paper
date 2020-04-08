@@ -10,7 +10,7 @@ However, client input to smart contract computation might be confidential and th
 Encrypting this secret information at the client side and decrypting it in the smart contract, is problematic:
 \begin{itemize}
 	\item Using symmetric encryption induces either chicken-and-egg problem or the need to send these keys separately, complicating the interaction between clients and peers.
-	\item It is tempting to use asymmetric encryption and have the client encrypt the secrets using the public key of the peers, unfortunately since semantically secure asymmetric encryption has to be non deterministic \cite{probEncryption} this limits the use only for endorsement policies that require signatures from peers with the same private keys, making it a non viable candidate. 
+	\item It is tempting to use asymmetric encryption and have the client encrypt the secrets using the public key of the peers. This requires the client to encrypt the data separately for each peer that is involved in the smart contract execution, however requires infrastructure for public key discovery.
 \end{itemize}
 
 Instead, the client passes the secret information to the peer in a different data section, denoted as \emph{transient data} than the public input to the smart contract computation which is omitted from the transaction that ends up in the blockchain.
