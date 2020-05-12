@@ -1,10 +1,24 @@
 \section{Related Work}
 \yacov{I'll take this part if you don't mind $:)$}
 \textbf{(1) Fabric Channel.}
+Hyperledger Fabric achieves data segregation through multi-tenancy by allowing nodes to participate in a plurality of independent Blockchain protocol instances. Each such a distributed Blockchain protocol instance is called a channel. 
+
+While each channel induces its own ledger, nodes share their local storage and compute resources among the different channels they participate in. 
+
+Being independent ledgers allows channels to provide perfect privacy, as no data is shared with ineligible organizations if they are not part of a channel.
+However, this data segregation is extremely coarse grained and the lack of total order across different channels makes it non trivial to use for all use cases that require hiding only part of the data of a transaction. Additionally, channels come with a significant performance overhead, as all protocol messages, in-memory data structures, and database instances are now duplicated.
 \par
 \textbf{(2) Quorum~\cite{} Private Transaction.}
 \par
 \textbf{(3) Encryption of Data.}
 \par
-\textbf{(4) Zero Knowledge Proof.}
+\textbf{(4) Zero Knowledge Proof.} Proofs that yield nothing more than their validity were introduced by Goldwasser, Micali and Rackoff in 1989 \cite{10.1145/22145.22178}. Since then, significant improvements have been made, namely making the proofs non-interactive and efficient \cite{Fiat1986HowTP}.  Employing zero knowledge proofs in distributed protocols enforces honest behavior on dishonest parties, allowing hiding confidential data with commitments or encryption and still retaining correctness.
+
+Utilizing zero knowledge proofs in Blockchain were first proposed by Adam Back in 2013 \cite{bitcoinTalk} and incorporated into Blockchain technology by Maxwell \cite{maxwell} which used Pedersen commitments \cite{10.1007/3-540-46766-1_9} to hide the transaction amounts, and zero knowledge proofs to ensure the sum of input coins is not less than the sum of output coins. 
+
+Later on, Monero \cite{Saberhagen2013CryptoNoteV2} enhanced the former technique by adding ring signatures to hide the transactor among a set of random transactors, as well as hiding the target address of a coin transfer. 
+
+The biggest downside of the techniques used in Monero is that the transaction size grows linearly in the anonymity set. The authors of Zerocash \cite{inproceedings} proposed to use  a succinct zero knowledge proof system called zkSNARKs \cite{10.5555/2671225.2671275}, however it relies on trusted setup, and although the verification is very fast, the proving time is significant. 
+
+Privacy preserving smart contracts with arbitrary logic that use zero knowledge proofs were proposed in Hawk \cite{7546538} which also utilizes zkSNARKs, thus relies on a trusted setup. Zether \cite{Bnz2019ZetherTP} eliminates the trusted setup requirement by utilizing a novel zero knowledge scheme called Bulletproofs.
 
