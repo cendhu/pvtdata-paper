@@ -1,6 +1,12 @@
 \section{Related Work}
 \yacov{I'll take this part if you don't mind $:)$}
 \textbf{(1) Fabric Channel.}
+Hyperledger Fabric achieves data segregation through multi-tenancy by allowing nodes to participate in a plurality of independent Blockchain protocol instances. Each such a distributed Blockchain protocol instance is called a channel. 
+
+While each channel induces its own ledger, nodes share their local storage and compute resources among the different channels they participate in. 
+
+Being independent ledgers allows channels to provide perfect privacy, as no data is shared with ineligible organizations if they are not part of a channel.
+However, this data segregation is extremely coarse grained and the lack of total order across different channels makes it non trivial to use for all use cases that require hiding only part of the data of a transaction. Additionally, channels come with a significant performance overhead, as all protocol messages, in-memory data structures, and database instances are now duplicated.
 \par
 \textbf{(2) Quorum~\cite{} Private Transaction.}
 \par
