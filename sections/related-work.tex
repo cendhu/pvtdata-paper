@@ -8,7 +8,14 @@ While each channel induces its own ledger, nodes share their local storage and c
 Being independent ledgers allows channels to provide perfect privacy, as no data is shared with ineligible organizations if they are not part of a channel.
 However, this data segregation is extremely coarse grained and the lack of total order across different channels makes it non trivial to use for all use cases that require hiding only part of the data of a transaction. Additionally, channels come with a significant performance overhead, as all protocol messages, in-memory data structures, and database instances are now duplicated.
 \par
-\textbf{(2) Quorum~\cite{} Private Transaction.}
+\textbf{(2) Quorum~\cite{Quorum} Private Transaction.}
+Quorum is a permissioned Blockchain based on Ethereum. By using classical consensus algorithms such as Raft and Istanbul-BFT, it achieves finality and high throughput which are desired qualities for enterprise settings.
+
+Quorum achieves privacy through sharding the state database. Private transactions are applied on namespaces which are disjoint from the public namespaces, thus unlike Hyperledger Fabric, there is no interoperability between private information and public information in the same transaction.
+
+Quorum private transactions are implemented by first generating a symmetric key and encrypting it with public keys of each party that the transaction is designed to.
+Then, the encryptions of the symmetric key, and the transaction payload encrypted with the symmetric key is sent to the relevant parties. Finally, a private transaction is generated with only the hash of the encrypted payload, and is appended to the Blockchain. All nodes not included in the \emph{privateFor} field ignore the transaction, while those that are -- decrypt the symmetric key with their public key, and finally decrypt the private payload and commit the transaction.
+
 \par
 \textbf{(3) Encryption of Data.}
 \par
