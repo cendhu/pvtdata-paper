@@ -62,8 +62,44 @@ that are member of the corresponding private data collection.
 \textbf{Serializability Validation.}
 \\ Owner: Manish
 \par
+In order to maintain serializability of the transactions, we validate each transaction in the block,
+\textit{logically} in the order in which they apper in the block. In order to perform validation for a transaction,
+we  verify that the version of the each of key hashes in the hashed read-set are the same as in the committed state
+as of the immidiate preceding transaction. If the transaction is found to be valid, then we apply to the committed state 
+the write-set portion of the hashed read-write-set and then we proceed with the validation of the next transaction in the block.
+\par
+This approach allows for the peers across organizations to perform validation of the transactions in a deterministic manner
+without having to access to the actual private data. As a result, this approach allows for modifying in a single transaction,
+the public data and the private data from more than one collections. However, this approach comes with a limitation, which is,
+unlike public data, we can only support the point queries on the private data with a serializability guarantee.
+The support of complex queries would work only where applications can tolerate with repeatable read semantics 
+for the transaction isolation.
+
+\par
 \textbf{Private Data Store.}
 \\ Owner: Manish
+\par
+We prserve each of the private write-set associated with a collection within a transaction in a separate store
+that we refer to as \textit{ private data store}. Since each organization may be eligible to receive the private 
+write-sets for a different set of collections in a transaction, unlike block store, the data stored in the 
+private data store on one peer may differ from the data stored into another peer with in a network. The primary
+motivation for the private data store is to maintain all the versions of private data for the provenance related queries.
+The private data store also serves the request from other organizations for the private write-sets associated 
+with a transaction. However, the private data store serves the write-sets of only those collections in a transaction for which
+the requesting organization is a member.
+
+\par
+As noted before, at the time of committing a block on a peer, some of the private write-sets may be not be available 
+corresponding to the transactions included in the block. There are two primary reasons for non availability of the 
+private write-sets for a collection at the time of committing a block; 1) the organization is not eligible for one or
+more collections modified in a transaction and 2) the committing peer could not successfully access to the private
+write-sets. In the private data store, in addition to persisting the private write-sets, we also maintain this information
+about the non-availability of the private write-sets along with a notion that specifies one of the above two mentioned reasons.
+This information is used for attempting to retrieve the missing private write-sets in the future under two scenarios; 
+1) the peer periodically tries to fetch the private write-sets for which the peer is eligible but the peer could not retrieve 
+this data from other peers at the time of commit and 2) if the peer becomes eligible for a collection in the future. We discuss
+these scenarios in more detail in the latter sub-sections.
+
 \par
 \textbf{State DB.}
 \\ Owner: Manish
