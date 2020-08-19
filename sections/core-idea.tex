@@ -63,8 +63,15 @@ including the three use-cases described in \S\ref{motivation}.
 In this section, we consider three existing blockchain replication protocols and discuss whether the
 proposed private data collection can be implemented while satisfying the design requirements
 specified in \S\ref{pdc}. Note that it is possible to implement requirements R4 and R5 in all three
-existing replication protocols, and hence it is not discussed in this section
-\subsection{Order-Execute-Commit} 
+existing replication protocols, and hence it is not discussed in this section.
+\begin{figure*}
+  \centerline{\includegraphics[scale=0.46]{fig/existing-blockchain-protocols.pdf}}
+  \vspace{-.2cm}
+  \caption{\small{Transaction model in Existing Blockchain Replication Protocol.}}
+    \label{fig:existing-blockchain-protocols}
+  \vspace{-.5cm}
+\end{figure*}
+\subsection{Order-Execute-Commit}
 \label{order-execute-commit}
 This replication protocol consists of the following three steps. First, the user-submitted
 transactions are ordered, and a block is generated through mining/consensus. Second, the created block is broadcasted
