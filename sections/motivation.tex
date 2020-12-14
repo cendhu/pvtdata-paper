@@ -1,11 +1,12 @@
 \section{Motivation for Data Privacy}
 \label{motivation}
-In this section, we motivate the need for providing data privacy in a blockchain network by introducing
+In this section, we motivate the need for data privacy in a blockchain network by introducing
 the following three use-cases: (1) food traceability, (2) patient-centric health-care, and (3) identity
-documents and certificates management. Each of these use-cases solves a real-world problem using blockchain
-technology. However, due to the lack of support for data privacy in existing blockchain technologies,
-some sensitive information could be leaked. For achieving the widespread adoption of blockchain, it is
-necessary to introduce a mechanism to preserve the privacy of sensitive data.
+and certificates management.
+% Each use-case solves a real-world problem using blockchain
+% technology. However, due to the lack of support for data privacy in existing blockchain technologies,
+% some sensitive information could be leaked. For achieving the widespread adoption of blockchain, it is
+% necessary to introduce a mechanism to preserve the privacy of sensitive data.
 \subsection{Food Traceability}
 In September 2006, there was an outbreak of food-borne illness caused by Escherichia coli
 bacteria~\cite{ecoil} in 26 U.S. states. This outbreak was linked to bagged spinach. By October 6, 2006, 199 people had been
@@ -13,7 +14,7 @@ infected, including three people who died and 31 who suffered kidney failure. It
 weeks to conduct the backtrace and determine the exact source of the outbreak. During those two weeks,
 many people got sick, and tons of good spinach was unnecessarily discarded---wrongfully
 wasted because we could not tell the good spinach from the bad~\cite{blockchain-for-business}.
-An efficient food traceability mechanism is the key to reduce the backtrace time in such a scenario.
+An efficient food traceability mechanism is the key to reduce the backtrace time.
 Traceability is the ability to track and record the movement of food products throughout a supply chain, which
 includes growing, harvesting, packing, manufacturing, repacking, storage, distribution, and sale to the consumer.
 With this information, it is possible to trace backward in the supply chain (usually to find the source of a
@@ -40,29 +41,30 @@ problem) as well as trace forward (usually to do a recall of contaminated produc
 % \par
 Food Standards Australia New Zealand (FSANZ)~\cite{fs}, European Commission's food safety policy~\cite{eu-foodsafety},
 and Food and Agriculture Organization of United Nations (FAO)~\cite{fao-traceability} provide various guidelines on what
-records need be kept in order to enable food traceability. The following are some of the records:
-\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-    \item the name and address (and other contact details) of farmers/suppliers and a description of products.
-	\item the name and contact information of the logistics providers and a description of products transported.
-	\item the name and addresses (and other contact details) of customers and a description of the product supplied to them along with the product ID.
-	\item date of transaction or delivery.
-	\item batch or lot identification (or other markings such as product ID).
-    \item volume or quantity of product supplied or received.
-	\item raw materials used.
-	\item conservation and storage methods for the product.
-\end{enumerate}
-As a result, when an outbreak of food-borne illness occurs, it would be possible to traceback from the customer
-$\rightarrow$ the product ID $\rightarrow$ the supplier/farmer. Similarly, a recall can be performed by tracing forward
-from the farmer/supplier $\rightarrow$ the product lot $\rightarrow$ customers. If these records are kept in the form of
-papers or stored digitally in a centralized database maintained at individual operators, during an outbreak, a lot of
-communication needs to happen between various food business operators to perform traceback or trace forward. Such a method
-is very inefficient, time-consuming, and expensive. Hence, a blockchain-based food traceability
-solution is needed for food safety. Further, such a solution helps to improve the overall supply chain efficiency, to
-allow us to easily communicate information that customers are asking for (i.e., fork to farm), to handle disputes quickly,
-and to help authenticate claims made in a product. With blockchain, network members can track the food products as they
-travel from farm to fork. Recently, Walmart, a retailer, did an experiment that traced the origin of sliced mangos from
+records need be kept in order to enable food traceability.
+% The following are some of the records:
+% \begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+%     \item the name and address (and other contact details) of farmers/suppliers and a description of products.
+% 	\item the name and contact information of the logistics providers and a description of products transported.
+% 	\item the name and addresses (and other contact details) of customers and a description of the product supplied to them along with the product ID.
+% 	\item date of transaction or delivery.
+% 	\item batch or lot identification (or other markings such as product ID).
+%     \item volume or quantity of product supplied or received.
+% 	\item raw materials used.
+% 	\item conservation and storage methods for the product.
+% \end{enumerate}
+% As a result, when an outbreak of food-borne illness occurs, it would be possible to trace backward and forward. from the customer
+% $\rightarrow$ the product ID $\rightarrow$ the supplier/farmer. Similarly, a recall can be performed by tracing forward
+% from the farmer/supplier $\rightarrow$ the product lot $\rightarrow$ customers.
+If these records are kept in the form of papers or stored digitally in a centralized database maintained at individual
+operators, during an outbreak, a lot of communication needs to happen between various food business operators to perform
+the tracing. Such a method is very inefficient, time-consuming, and expensive. Hence, a blockchain-based food traceability
+solution is needed for food safety. Further, such a solution helps to easily communicate information that customers are
+asking for (i.e., fork to farm) and to handle disputes between operators. %and to help authenticate claims made in a product.
+% With blockchain, network members can track the food products as they travel from farm to fork.
+Recently, Walmart, a retailer, did an experiment that traced the origin of sliced mangos from
 Walmart stores back to the farm. This process showed a radical improvement from approximately seven days it took to
-conduct the backtrace by using traditional methods down to 2.2 seconds~\cite{7-to-2, walmart-hf} using Hyperledger Fabric.
+conduct the backtrace by using traditional methods down to 2.2 seconds~\cite{7-to-2, walmart-hf} using a blockchain-based solution.
 \par
 Figure~\ref{fig:fsc} shows actors involved in a simplified chocolate bars supply chain. For manufacturing a
 chocolate bar, cacao and milk are required (assume a bar of sugar-free chocolate). Usually, manufacturers
@@ -74,8 +76,8 @@ we do not cover all involved actors.
 \textbf{Blockchain-Based Solution.} Figure~\ref{fig:tx-flow-fsc} shows a sample business process in a chocolate supply
 chain network. The process involves order placement, invoice creation, shipping arrangement, delivery, and proof of payment.
 We can implement the whole process using a permissioned blockchain platform with the help of smart-contracts. As each
-transaction is recorded in a replicated ledger, it enables the user to (a) perform the forward and backward tracing
-quickly and efficiently; (b) resolve disputes quickly; (c) maintain a tamper-evident record management for food traceability.
+transaction is recorded in a replicated ledger, it enables the user to (a) perform a quick forward and backward tracing;
+(b) resolve disputes efficiently; (c) maintain a tamper-evident records.
 Note that blockchain also helps in standardizing the business process and data format through smart-contract.
 \par
 \textbf{Data Privacy Violation.}\textit{
@@ -83,7 +85,9 @@ Note that blockchain also helps in standardizing the business process and data f
 proprietary or business competitive information. For example, invoice details cannot be shared as it could leak
 the business contract between the farmer and the supplier or the distributor and the retailer. As a result, a manufacture,
 a distributor and a retailer can find out the profit made by the supplier, manufacture and the distributor, respectively.
-This would result in unnecessary bargaining and conflicts between business partners.}
+This would result in unnecessary bargaining and conflicts between business partners. Though the network could employ
+a non-blockchain based solution for the order placement and payments, it adds additional overhead in managing multiple
+solutions and integration.}
 % As customer
 % contact details are very sensitive, it is not advisable to store it in the replicated ledger.
 % \par
@@ -158,24 +162,22 @@ data become simpler.
 \textbf{Identity Frauds.}
 In 2018, nearly 14.4 million people in the US were impacted by some form of identity theft according to a survey conducted by
 Javelin Strategy and Research~\cite{}. Such frauds costed \$1.7 billion in total for victims. The stoled identities were used
-to takeover existing accounts and open new accounts for loan and mortages, which results in a financial loss for the victims.
-According to interpol~\cite{}, criminals make fake identities to carry out their illegal activities. Criminals use counterfeit and
-forged identity or travel document as well as genuine identity or travel document which was acquired using other
-counterfeit documents. Hence, there is a need to digitalize the identity and documents to avoid such frauds.
+to takeover existing accounts and open new accounts for loan and mortages, which resulted in a financial loss for the victims.
+According to interpol~\cite{}, criminals make fake identities or travel documents to carry out their illegal activities.
+Hence, there is a need to digitalize the identity and travel document to avoid such frauds.
 \par
 \textbf{Certificate Frauds.}
 Fradulent diploma certificates have become a global phenomemon due to the rising demand of qualification requirement
-in the job market~\cite{}. Based on national data in US, 6\% of bachelor degrees and 35\% of associate degrees are fake~cite{}.
+in the job market~\cite{}. Based on national data in US, 6\% of bachelor degrees and 35\% of associate degrees are fake\~cite{}.
 Due to lack of transparency and digitalization of degree certificates by universities, the companies need to trust
-the employee, and notraries. Hence, it is easily possible to produce and present fake diplomas. 
+the employee, and notraries. Hence, it is easily possible to produce and present fake diplomas.
 \par
 \textbf{Blockchain Based Solution.}
-To tackle the abovem entioned problems, a blockchain-based solution can be used to issue certificates and to verify issued
+To tackle the above mentioned problems, a blockchain-based solution can be used to issue certificates and to verify issued
 certificates. Figure~\ref{fig:identity-certificate} shows actors involved in such a blockchain solution. The issuing authorities
 store the documents such as birth certificates, passport, driving license, diploma certificates directly into the replicated
 ledger. These documents are owned by the respective individual and can control the access permission using the blockchain wallet.
-The consumers of documents and certificates can get the permission from the individual and verify the document for various purpose
-such as job appointment.
+The consumers of documents and certificates can get the permission from the individual and verify the document.
 \par
 \textbf{Data Privacy Violation.}\textit{
 		Storing all sensitive document such as passport, diploma certificates in a replicated ledger could leak

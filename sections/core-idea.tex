@@ -2,22 +2,26 @@
 \label{pdc}
 \textbf{Key Idea.}
 To hide the sensitive data from specific members in a blockchain
-network, we can share the data only with the members who should see it and store the
+network, we propose to share the data only with the members who should see it and store the
 hash of data on the replicated ledger as evidence for tamper detection. To achieve this,
 we propose private data collection with membership---any data stored on a collection is
-visible only to the collection members, and the hash of the data is stored on the replicated ledger.
-Using private data collection, Figure~\ref{fig:fsc-pvt-data-food-traceability} showcases
-how we can achieve data privacy in the food traceability use-case. There are four private
+visible and reside only on the collection members' node, and the hash of the data is stored
+on the replicated ledger.
+\par
+Figure~\ref{fig:fsc-pvt-data-food-traceability} showcases the use of private data collection
+to achieve data privacy in the food traceability use-case. There are four private
 data collections, each with two members and one private data collection with just one member.
 The replicated ledger contains only the order IDs, product \& lot IDs, participants involved
 in each transaction, and the hash of each private data stored in each collection. For each
 order ID, the respective order details, invoices, and payment are stored in the respective
 collection depending on who issued the order to whom. Thus, data privacy is achieved in the
-food traceability solution. Similarly, Figure~\ref{fig:fsc-pvt-data-health-care} uses private
-data collection to achieve data privacy in health-care use-case. Note that the medical record
+food traceability solution.
+\par
+Figure~\ref{fig:fsc-pvt-data-health-care} showcases the use of private
+data collection to achieve data privacy in health-care use-case. The medical record
 can be shared with the regulator and insurance provider on an as-needed basis by copying the
 private data from one's hospital collection to another. As the evidence of the data is present
-in the replicated ledger, the receiving party can ensure that the data has not tampered.
+in the replicated ledger, the receiving party can ensure the authenticity of the data.
 Similarly, a medical record of a patient maintained at one hospital can be copied to another
 on an as-needed basis. Hereafter, we refer to the data stored in the replicated ledger as public data.
 \par
@@ -25,12 +29,14 @@ on an as-needed basis. Hereafter, we refer to the data stored in the replicated 
 The following requirements should be satisfied with our design to allow a wide variety of use-cases,
 including the three use-cases described in \S\ref{motivation}.
 \begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-		\item[\textbf{R1}] The smart-contract, which is executing on a blockchain node owned by a member, should be able
-				to access both the private data collection and the public data stored on the replicated ledger.
-				This helps the smart-contract to ensure common data formats needed for sharing
+		\item[\textbf{R1}] A transaction input includes the name of private data collection and private data
+            to be stored or modified. The smart-contract hosted on a blockchain network
+            should be able to access all private data collections specified in the transaction as well as the public data stored
+                on the replicated ledger. As a result, the transaction may not be submitted/executed on all nodes
+                in the network. The smart-contract helps to ensure common data formats needed for sharing
 				data across different members and to follow the agreed business process while processing the
 				transaction.
-		\item[\textbf{R2}] When transactions, executed by smart-contract, modify both the public and private data,
+		\item[\textbf{R2}] When a transaction, executed by smart-contract, modifies both the public and private data,
 				the atomicity and serializable isolation should be guaranteed.
 		\item[\textbf{R3}] The hash of the private data stored on the replicated ledger should always be in sync with the actual
 				private data stored in the collection.
@@ -62,34 +68,35 @@ including the three use-cases described in \S\ref{motivation}.
 \section{Implication of Blockchain Replication Protocols on Private Data Collections}
 In this section, we consider three existing blockchain replication protocols and discuss whether the
 proposed private data collection can be implemented while satisfying the design requirements
-specified in \S\ref{pdc}. Note that it is possible to implement requirements R4 and R5 in all three
-existing replication protocols, and hence it is not discussed in this section
+specified in \S\ref{pdc}. %Note that it is possible to implement requirements R4 and R5 in all three
+%existing replication protocols, and hence it is not discussed in this section
 \subsection{Order-Execute-Commit} 
 \label{order-execute-commit}
-This replication protocol consists of the following three steps. First, the user-submitted
-transactions are ordered, and a block is generated through mining/consensus. Second, the created block is broadcasted
-to all nodes in the blockchain network. Third, on receiving a block, each node executes the transaction serially
-by invoking the appropriate smart-contract and commit the same. Ethereum~\cite{}, Quorum~\cite{}, and Hyperledger
-Besu~\cite{} implements order-execute-commit replication protocol. In this protocol, the transaction inputs are passed
-to all nodes via a block. All nodes execute the smart-contract using the inputs.
-Given that transaction inputs
-go to all nodes, we could pass the private data to members' node via a separate mechanism and only pass the hashed
-state in the transaction inputs. However, with this solution, it is not possible to support requirements R1, R2,
-and R3 listed in \S\ref{pdc}. The requirement R1 cannot be satisfied because the smart-contract is executed on all nodes,
-i.e., even on the nodes which do not have access to the required private data collection. The requirement R2 cannot
-be satisfied because the user cannot pass the pointer to the private data key that needs to be modified in the
-transaction input as it would reveal some information about the private data. The requirement R3 cannot be
-satisfied as we need to store the private data separately before or after storing the hash on the replicated ledger
-using the smart-contract. Given these drawbacks, we decide not to pick the blockchain platforms which support
-only the order-execute-commit replication protocol.
+In this replication protocol, first, the user-submitted transactions are ordered, and a block is generated through
+mining/consensus. Second, the created block is broadcasted to all nodes in the blockchain network. Third, on receiving
+a block, each node executes the transaction serially by invoking the appropriate smart-contract and commit the same.
+Ethereum~\cite{}, Quorum~\cite{}, and Hyperledger Besu~\cite{} implements order-execute-commit replication protocol.
+In this protocol, the transaction input are passed to all nodes via a block. All nodes execute the smart-contract
+using the input. Hence, it is not possible to support requirement R1 listed in \S\ref{pdc} with this protocol.
+% Given that transaction input go to all nodes, we need to pass the private data to members' node via
+% a separate mechanism and only pass the hashed state in the transaction input. However, with this solution, it
+% is not possible to support requirements R1, R2, and R3 listed in \S\ref{pdc}. The requirement R1 cannot be satisfied
+% because the smart-contract is executed on all nodes, i.e., even on the nodes which do not have access to the required
+% private data collection.
+% The requirement R2 cannot be satisfied as we need to store the private data separately before or after storing the hash
+% on the replicated ledger using the smart-contract.
+% The requirement R3 cannot be satisfied because the user cannot pass the pointer to the private
+% data, such as order ID, in the transaction input that needs to be modified as it would reveal some information
+% about the private data.
+% Given these drawbacks, we decide not to pick the blockchain platforms
+% which support only the order-execute-commit replication protocol.
 \subsection{Execute-Order-In-Parallel \& Commit}
 In this replication protocol, all transactions execute in parallel on all nodes without prior knowledge of ordering
 while ordering happens parallelly through a consensus service or mining. Once the block is created and
 delivered to all nodes, the executed transactions would get committed/aborted depending on the serializability check.
-If a node never received a transaction that is present in the block, it would execute the transaction and commit.
+% If a node never received a transaction that is present in the block, it would execute the transaction and commit.
 The BlockchainRDBMS~\cite{} implements execute-order-in-parallel \& commit replication protocol. Similar to the
-order-execute-commit protocol, we cannot satisfy requirements R1, R2, and R3 for the same reason specified in the
-\S\ref{order-execute-commit}.
+order-execute-commit protocol, we cannot satisfy requirements R1.
 \subsection{Simulate-Order-Validate-Commit.}
 This replication protocol consists of the following four steps. First, the transaction is simulated on a sub-set
 of nodes depending on the endorsement policy defined for a smart-contract. As a result of transaction simulation,
@@ -102,14 +109,14 @@ valid serializable transactions are committed. Hyperledger Fabric~\cite{} implem
 replication protocol. 
 \par
 With this replication protocol, we can implement private data collection while satisfying all five requirements
-mentioned in \S\ref{pdc}. To satisfy requirement R1, we can pass the private data in the transaction inputs itself
-and simulate the transaction on nodes which are the members of the private data collection. To satisfy requirements
-R2 and R3, we can make the node to compute and store only the hash of private data in the
-read-write set which goes to all nodes to get stored in the replicated ledger. During transaction simulation,
-we can store the private data in a temporary store and fetch it while processing the read-write set during the
-commit time.
+mentioned in \S\ref{pdc}. To satisfy requirement R1, we can pass the private data in the transaction input itself
+and simulate the transaction only on nodes which are the members of the private data collection. To ensure that
+only members stores the private data, during transaction simulation, we can store the private data in a temporary store
+and include only the hash of private data in the read-write set which goes to all nodes via a block for validation
+and commit. During commit, for valid transactions, we can fetch the corresponding private data from the temporary store.
+Thus, the requirements R2 and R3 are satisfied. The other requirements can also be satisfied as shown in \S\ref{}.
 % Given that transaction can be simulated on a sub-set of nodes, we can pass the private
-% data in the transaction inputs itself and simulate the transaction as per the collection membership. Thus, the
+% data in the transaction input itself and simulate the transaction as per the collection membership. Thus, the
 % smart-contract can access both private and public states which satisfies the requirement R1. As the simulation
 % result includes read-write set, we can make the node to compute and store only the hash of private data in the
 % read-write set which goes to all node to get stored in the replicated ledger. During transaction simulation,
