@@ -1,0 +1,52 @@
+\begin{table*}
+    \vspace{-.2cm}
+        \small{
+            \centering
+            \caption{APIs to write a smart-contract}
+            \label{table:apis}
+            \begin{tabular} {| p{3.4cm} | p{13.3cm} |}
+                \hline
+                \textit{API} & \textit{Description} \\ \hline
+                \texttt{GetState}(k) & $\rightarrow$ returns the value of the
+                                         specified key \textit{k} from the public data space
+                                         \newline
+                                         $\rightarrow$ records the key along with the read version in the
+                                         transaction's public data read-set
+                                         \\ \hline
+                \texttt{PutState}(k, v) & $\rightarrow$ puts the specified key \textit{k} and value \textit{v}
+                                         into the transaction's public data write-set
+                                         \\ \hline
+                \texttt{DelState}(k) & $\rightarrow$ records the specified key \textit{k} to be deleted in
+                                         the transaction's public data write-set
+                                         \\ \hline
+                \texttt{GetPrivateData}(c, k) & $\rightarrow$ returns the value of the specified key
+                                                \textit{k} from the specified collection \textit{c}
+                                                \newline 
+                                                $\rightarrow$ records the hash of the key along with the read
+                                                version in the transaction's hashed data read-set
+                                                \\ \hline
+                \texttt{GetPrivateDataHash}(c, k) & $\rightarrow$ returns the hash of the value of the
+                                                    specified key \textit{k} from the
+                                                    specified collection \textit{c}
+                                                    \newline
+                                                    $\rightarrow$ records the hash of
+                                                    the key and the read version in the
+                                                    transaction's hashed data read-set.
+                                                    \\ \hline
+                \texttt{PutPrivateData}(c, k, v) & $\rightarrow$ puts the specified key \textit{k} and
+                                                 value \textit{v} into the transaction's
+                                                private data write-set associated with
+                                                the specified collection \textit{c}
+                                                \newline
+                                                $\rightarrow$ records the hash of the key and value into
+                                                the transaction's hashed data write-set
+                                                \\ \hline
+                \texttt{DelPrivateData}(c, k) & $\rightarrow$ records the specified key \textit{k} to
+                                                be deleted in the transaction's private write-set
+                                                associated with the specified collection \textit{c}
+                                                \\ \hline
+            \end{tabular}
+        }
+    \vspace{-.2cm}
+\end{table*}
+

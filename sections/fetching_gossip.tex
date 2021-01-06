@@ -2,10 +2,10 @@ Despite hash pre-images can be disseminated to target peers before they receive 
 
 To that end, prior to committing a block to the ledger, a peer iterates through all hashed key writes in all transactions of the Block and analyzes whether it needs to pull private data for each hashes key write. A hashed key write is considered as a viable candidate for pulling pre-images if:
 \begin{itemize}
-	\item The transaction passed validation of endorsement policies \yacov{Are we into abstracting out EPs? If yes then how should I phrase this?}. This is needed in order to prevent a denial-of-service attack in which a malicious party creates  transactions with hashed writes for which there are no pre-image in any peer in the network. Peers would try to pull these transactions and fail, hence considerably slowing down throughput.
-	\item Evaluation of the collection policy on the peer's identity returns "true" \yacov{Once we define collection policies more abstractly we need to change this as well}: this is required since peers that receive pre-image requests for a certain hashed write also evaluate the same collection policy on the requester peer's identity in order to determine if that peer is part of the collection the hashed write is associated with.
+	\item The transaction passed validation of endorsement policies {Are we into abstracting out EPs? If yes then how should I phrase this?}. This is needed in order to prevent a denial-of-service attack in which a malicious party creates  transactions with hashed writes for which there are no pre-image in any peer in the network. Peers would try to pull these transactions and fail, hence considerably slowing down throughput.
+	\item Evaluation of the collection policy on the peer's identity returns "true" {Once we define collection policies more abstractly we need to change this as well}: this is required since peers that receive pre-image requests for a certain hashed write also evaluate the same collection policy on the requester peer's identity in order to determine if that peer is part of the collection the hashed write is associated with.
 	\item Whether the peer is missing the pre-image from its transient store, since by definition this means the pre-image hasn't been disseminated to the peer before the commit of the block.
-	\item \yacov{Should we mention purged private data?}
+	\item {Should we mention purged private data?}
 \end{itemize}
 
 Once the peer decides it needs to pull a hashed write, it needs to select potential peers which might have the pre-image it needs, and send them requests for the digests.
@@ -13,5 +13,5 @@ Upon reception of responses containing pre-images, the peer validates that the h
 
 When sending requests for pre-images, a requester peer doesn't know up-front whether the responder peer has the pre-image, and every such "wrong guess" results in a retry which delays the block commit and thus hinders performance.
 
-For this reason, the peers prioritize requesting a pre-image from the peers which endorsed the transaction \yacov{This is very Fabric specific, so we might want to remove this?} from which the hashed write originated. This is possible because peers constantly maintain a membership view of alive peers by periodically disseminating heartbeats. 
+For this reason, the peers prioritize requesting a pre-image from the peers which endorsed the transaction {This is very Fabric specific, so we might want to remove this?} from which the hashed write originated. This is possible because peers constantly maintain a membership view of alive peers by periodically disseminating heartbeats. 
 

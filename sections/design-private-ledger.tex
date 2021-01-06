@@ -1,57 +1,84 @@
+\input{sections/apis.tex}
 \section{Design of Private Data Collections}
-\subsection{Transaction Flow}
-\subsubsection{Transaction Simulation}
+Figure~\ref{fig:proposed-pdc-flow} presents the changes made to
+the simulate-order-validate-commit protocol to achieve data privacy in a
+blockchain network. Note that we assume a key-value data model as it is used
+in most blockchain platforms. Table~\ref{table:apis} list APIs to be used by smart-contracts
+to access both the public and private data. Next, we discuss the changes made to simulation,
+validation, and commit phases to realize private data collection.
+\begin{figure}
+    \begin{center}
+	    \includegraphics[scale=0.35]{fig/proposed-pdc-flow.pdf}
+  		\vspace{-.4cm}
+        \caption{\small{The proposed replication protocol to realize data privacy}.}
+		\label{fig:proposed-pdc-flow}
+ \end{center}
+  \vspace{-.5cm}
+\end{figure}
+\subsection{Transaction Simulation}
+Similar to the original protocol, the simulation phase involves simulation of transaction
+and collection of read-write set. In addition to that, the proposed protocol introduces
+a few concepts such as transient data, hashed \& private read-write set, transient store,
+and private data dissemination as described next.
 \par
 \textbf{Transient Data in Transaction Proposal.}
-Each transaction in the blockchain contains the client's input to the smart contract computation, for auditing.
-However, client input to smart contract computation might be confidential and thus shouldn't appear in the blockchain's blocks.
-\\Otherwise, non-authorized observers could then easily obtain sensitive information such as encryption keys, raw biometric data, social security numbers, and more.
-
-Encrypting this secret information at the client side and decrypting it in the smart contract, is problematic:
+Each transaction in the block contains the client's input to the smart contract execution, for auditing.
+However, private data as an input in the transaction might leak the sensitive data if it appears as-is in the block.
+Encrypting this secret information at the client side and decrypting it in the smart contract, is problematic because
 \begin{itemize}
-	\item Using symmetric encryption induces either chicken-and-egg problem or the need to send these keys separately, complicating the interaction between clients and peers.
-	\item It is tempting to use asymmetric encryption and have the client encrypt the secrets using the public key of the peers. This requires the client to encrypt the data separately for each peer that is involved in the smart contract execution, however requires infrastructure for public key discovery.
+	\item Using symmetric encryption induces either chicken-and-egg problem or the need to send these keys separately,
+        complicating the interaction between clients and peers.
+	\item It is tempting to use asymmetric encryption and have the client encrypt the secrets using the public key of the peers.
+        This requires the client to encrypt the data separately for each peer that is involved in the smart contract execution,
+        however requires infrastructure for public key discovery.
 \end{itemize}
-
-Instead, the client passes the secret information to the peer in a different data section, denoted as \emph{transient data} than the public input to the smart contract computation which is omitted from the transaction that ends up in the blockchain.
-
-In order to preserve some minimal level of auditing capabilities, the peer includes the hash of all data sent from the client (including the transient data) in the input to the signature over the smart contract computation results.
-
-This allows a client to prove to an auditor that the computation was either done correctly or incorrectly by knowing the transient data.
-
+Instead, the client passes the secret information to the peer in a different data section, denoted as \emph{transient data}
+than the public input to the smart contract computation which is omitted from the transaction that ends up in the blockchain.
+In order to preserve some minimal level of auditing capabilities, the peer includes the hash of all data sent from the client
+(including the transient data) in the input to the signature over the smart contract computation results.
+This allows a client to prove to an auditor that the computation was either done correctly or incorrectly by knowing the
+transient data.
 \par
-\textbf{Hashed, and Private Read Write Set.}
-\\ Owner: Manish
-
+\textbf{Hashed Read-Write Set and Private Write Sets}
 \par
-While simulating a transaction, in addition to the read-write set for the public data, 
-we generate another read-write set for the hashes of the private data referred to as \textit{hashed read-write set}.
-Further, we produce a separate write-set for each private data collection that the transaction modifies. We refer to this write-set as \textit{private write-set}.
-A private write-set contains only writes for the private data for a specific collection.
-
+While simulating a transaction involving private data, node constructs (1) a public data read-write set,
+(2) a hashed data read-write set, and (3) one or more private data write set. As mentioned in Table~\ref{table:apis},
+the usage of one or more of \texttt{GetState(), PutState(), and DelState()} in the smart-contract results in the
+constructions of public data read-write set. Similarly, the usage of one or more of \texttt{GetPrivateData()},
+\texttt{PutPrivateData()}, \texttt{DelPrivateData()}, \texttt{GetPrivateDataHash()}, results in the constructions of the
+hashed data read-write set.
+As discussed in \S\ref{}, the hashed data read-write set is required such that all nodes in the blockchain network can perform
+the optimistic concurrency check to ensure serializable isolation irrespective of collections' accessed/modified and
+the respective membership.
+Further,
+a private write-set per collection is constructed when either \texttt{PutPrivateData()} or \texttt{DelPrivateData()} or
+both are used. In other words, a private write-set is constructed for each private data collection that the transaction modifies.
+As each private-write set should be visible only to the respective collection members, node packages only the public and hashed
+data read-write as a simulation result while storing the private data write-sets in the node's transient store. Further, the
+node share each private write-set associated with the transaction with other nodes that are member of the corresponding private data
+collection through private data dissemination as discussed later. This is also a reason for creating one private data write-set
+per collection.
+% While simulating a transaction, in addition to the read-write set for the public data,
+% node generates another read-write set for the hashes of the private data referred to as \textit{hashed data read-write set}.
+% Further, node produces a separate write-set for each private data collection that the transaction modifies. We refer to this
+% write-set as \textit{private data write-set}. A private data write-set contains only writes for the private data for a
+% specific collection. As a result, a transaction can have multiple private data write-sets.
+% \par
+% During simulation of a transaction, for each key in a private data collection that the transaction reads,
+% we add a tuple \texttt{<collection name, hash of the key, version of the hash of the key>} to the hashed read-set.
+% Further, for each key in a private data collection that the transaction creates or modifies, we add a tuple
+% \texttt{<collection name, hash of the key, hash of the new value>} to the hashed write-set and in addition, we add a tuple
+% \texttt{<pre-images of the private key, pre-images of the new value>} to the collection specific private write-set.
+% Thus, we generate one public read-write set, one hashed read-write set and one or more private write-sets for a
+% simulation of a transaction.
 \par
-During simulation of a transaction, for each key in a private data collection that the transaction reads,
-we add a tuple <collection name, hash of the key, version of the hash of the key> to the hashed read-set.
-Further, for each key in a private data collection that the transaction creates or modifies, 
-we add a tuple <collection name, hash of the key, hash of the new value>
-to the hashed write-set and in addition, we add a tuple <pre-images of the private key, pre-images of the new value>
-to the collection specific private write-set.
-
-Thus, we generate one public read-write set, one hashed read-write set and one or more private write-sets for a simulation of a transaction.
-
-\par
-Like the public read-write set, we package the hashed read-write set with the transaction data inside the block. However, we share
-each private write-sets associated with the transaction with only blockchain nodes that belong to the organizations
-that are member of the corresponding private data collection.
-
 \par
 \textbf{Transient Store.}
-\\ Owners: Artem/Yacov
 \par
 \textbf{Private Data Dissemination.}
 \input{sections/dissemination_gossip.tex}
 
-\subsubsection{Transaction Validation and Commit}
+\subsection{Transaction Validation and Commit}
 \par
 \textbf{Policy Validation.}
 \\ Owners: Artem/Yacov
