@@ -95,6 +95,25 @@ per collection.
 \textbf{State DB.}
 \\ Owner: Manish
 
+
+\subsection{Possible attacks and their mitigations}
+\par
+The two types of actors in our protocol are clients and peers. We analyze how our design copes with the presense of malicious actors of both types.
+
+The role of a client is to collect the responses from the peers, containing signed simulation results, bundle them into a transaction, and finally send it to the ordering service.
+
+The role of a peer is to mark private data collection updates with corresponding hashes, and disseminate hash pre-images to eligible peers.
+
+\textbf{Storage space overload}:  Recall, before reception of hashed writes in a block, the hash pre-images are saved in a temporary storage location called the transient store. Upon reception of a hashed write and locating the corresponding pre-images either from the transient store or from other peers, the peer purges the bespoken pre-images from the transient store. However, a malicious or faulty client may crash before it gets the chance to send the transaction to the ordering service, thus the corresponding hashed writes will never trigger deletion of pre-images stored in the transient store at the transaction simulation phase. Repeating this pattern over time will lead to excess storage accumulation which will also slow down the lookup speed of the transient store because of space increase. 
+
+To that end, we introduce a \emph{Retention period} rule to the transient store, which automatically purges hash pre-images associated to blocks too far in the past. More specifically, whenever a peer simulates a transaction, it records its ledger height (henceforth \emph{simulation height}) as part of the set of pre-images produced by the simulation of that transaction. When the peer's ledger height advances further than the retention period without encountering  corresponding hashes, it automatically purges these pre-images from the transient store. 
+
+A natural question that rises is what about disseminated pre-images that take place before the ordering? After all, peers also disseminate the pre-images to other peers in the transaction simulation phase for redundancy. We take a simple yet effective approach and include the simulation height along the pre-images that are disseminated. To protect against disseminating peers maliciously selecting an extremely high simulation height (such as $2^{64} - 1$), the receiving peers refuse if their ledger height is too behind the claimed simulation height of the disseminating peer.
+
+\textbf{Throughput degradation}: Besides malevolently increasing the storage space of the transient store, a malicious client may attempt to send a transaction with a fabricated simulation which was never signed by sufficient peers to satisfy the endorsement policy. As a result, peers would try to seek out pre-images among their neighbors until giving up due to reaching a maximum attempt threshold. Since peers can only handle a single block at a time, the throughput would greatly degrade due to the time spent looking for pre-images that are nowhere to be found.
+
+Consequently, we perform endorsement policy validation \emph{before} we proceed pulling the pre-images. This strategy ensures that every hash write in a transaction was simulated and signed by a threshold of peers, and therefore malicious clients (or colluding peers that do not satisfy the agreed upon endorsement policy) cannot corece peers to seek out pre-images that cannot be obtained because the transactions will be deemed invalid and pulling their pre-images will be skipped, thus mitigating the attack.
+
 \subsection{Collection Membership Change and Reconciliation}
 Owner: Senthil
 \par
