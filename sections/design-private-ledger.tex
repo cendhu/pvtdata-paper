@@ -18,10 +18,10 @@ validation, and commit phases to realize private data collection.
 \subsection{Transaction Simulation}
 Similar to the original protocol, the simulation phase involves simulation of transaction
 and collection of read-write set. In addition to that, the proposed protocol introduces
-a few concepts such as transient data, hashed \& private read-write set, transient store,
+a few novel concepts such as transient private data, hashed read-write set \& private write set, transient store,
 and private data dissemination as described next.
 \par
-\textbf{Transient Data in Transaction Proposal.}
+\textbf{Transient Private Data in Transaction Proposal.}
 Each transaction in the block contains the client's input to the smart contract execution, for auditing.
 However, private data as an input in the transaction might leak the sensitive data if it appears as-is in the block.
 Encrypting this secret information at the client side and decrypting it in the smart contract, is problematic because
@@ -40,6 +40,16 @@ This allows a client to prove to an auditor that the computation was either done
 transient data.
 \par
 \textbf{Hashed Read-Write Set and Private Write Sets}
+\begin{figure}
+    \begin{center}
+	    \includegraphics[scale=0.4]{fig/rwset-example.pdf}
+  		\vspace{-.4cm}
+        \caption{\small{An example construction of read-write sets for a sequence of API calls made from a smart-contract as
+        a result of transaction execution}.}
+		\label{fig:rwset-example}
+ \end{center}
+  \vspace{-.5cm}
+\end{figure}
 \par
 While simulating a transaction involving private data, node constructs (1) a public data read-write set,
 (2) a hashed data read-write set, and (3) one or more private data write set. As mentioned in Table~\ref{table:apis},
