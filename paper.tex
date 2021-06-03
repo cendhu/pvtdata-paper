@@ -4,7 +4,18 @@
 % Removed the requirement to include *bbl file in here. (AhmetSacan, Sep2012)
 % Fixed the equation on page 3 to prevent line overflow. (AhmetSacan, Sep2012)
 
-\documentclass{vldb}
+ \documentclass[sigplan,10pt]{acmart}
+
+\newcommand\vldbdoi{XX.XX/XXX.XX}
+\newcommand\vldbpages{XXX-XXX}
+\newcommand\vldbvolume{14}
+\newcommand\vldbissue{1}
+\newcommand\vldbyear{2020}
+\newcommand\vldbauthors{\authors}
+\newcommand\vldbtitle{\shorttitle} 
+\newcommand\vldbavailabilityurl{http://vldb.org/pvldb/format_vol14.html}
+\newcommand\vldbpagestyle{plain}
+% \documentclass{vldb}
 % \renewcommand{\baselinestretch}{0.99}
 \usepackage{graphicx}
 % \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
@@ -44,23 +55,13 @@
 % }
 % \makeatother
 
-% Include information below and uncomment for camera ready
-\vldbTitle{Enabling Data Privacy in Blockchain}
-\vldbAuthors{}
-\vldbDOI{}
-\vldbVolume{}
-\vldbNumber{}
-\vldbYear{}
-% \balance
-
-
 \newcommand{\yacov}[1]{\textcolor{blue}{$\ll${Yacov: #1}$\gg$}}
 
 
 \usepackage{nopageno}
 % allow hypenation at random places
 % but increaces total size of the text
-% \sloppy
+\sloppy
 
 \begin{document}
 
@@ -165,10 +166,36 @@
 % number that will appear in the \additionalauthors section.
 %}
 
+\input{sections/abstract.tex}
 
 \maketitle
 
-\input{sections/abstract.tex}
+
+%%% do not modify the following VLDB block %%
+%%% VLDB block start %%%
+\pagestyle{\vldbpagestyle}
+\begingroup\small\noindent\raggedright\textbf{PVLDB Reference Format:}\\
+\vldbauthors. \vldbtitle. PVLDB, \vldbvolume(\vldbissue): \vldbpages, \vldbyear.\\
+\href{https://doi.org/\vldbdoi}{doi:\vldbdoi}
+\endgroup
+\begingroup
+\renewcommand\thefootnote{}\footnote{\noindent
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International License. Visit \url{https://creativecommons.org/licenses/by-nc-nd/4.0/} to view a copy of this license. For any use beyond those covered by this license, obtain permission by emailing \href{mailto:info@vldb.org}{info@vldb.org}. Copyright is held by the owner/author(s). Publication rights licensed to the VLDB Endowment. \\
+\raggedright Proceedings of the VLDB Endowment, Vol. \vldbvolume, No. \vldbissue\ %
+ISSN 2150-8097. \\
+\href{https://doi.org/\vldbdoi}{doi:\vldbdoi} \\
+}\addtocounter{footnote}{-1}\endgroup
+%%% VLDB block end %%%
+
+%%% do not modify the following VLDB block %%
+%%% VLDB block start %%%
+\ifdefempty{\vldbavailabilityurl}{}{
+\vspace{.3cm}
+% \begingroup\small\noindent\raggedright\textbf{PVLDB Artifact Availability:}\\
+% The source code, data, and/or other artifacts have been made available at \url{\vldbavailabilityurl}.
+% \endgroup
+}
+%%% VLDB block end %%%
 
 \input{sections/introduction.tex}
 
