@@ -1,0 +1,167 @@
+\begin{tikzpicture}[
+    >=Stealth,
+    every node/.style={font=\small},
+    lifeline/.style={dashed, gray},
+    msg/.style={->, semithick},
+    bcast/.style={->, semithick},
+    hdr/.style={draw, minimum width=0.8cm, minimum height=0.35cm, font=\small},
+]
+
+% ============ (a) Order-Execute-Commit ============
+\begin{scope}[local bounding box=protocola]
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+
+  \node[hdr] at (\colC,0) {Client};
+  \node[hdr] at (\colA,0) {Peer 1};
+  \node[hdr] at (\colB,0) {Peer 2};
+  \node[hdr] at (\colN,0) {Peer n};
+  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+
+  \foreach \x in {\colC,\colA,\colB,\colN,\colO}
+    \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
+
+  % Step 1: Client -> Ordering Service
+  \draw[msg] (\colC,-0.45) -- node[above] {$T_i$} (\colO,-0.45);
+  \node at (\colC-0.35,-0.45) {\cstep{1}};
+
+  % Step 2: Block creation
+  \node[right] at (\colO+0.12,-0.85) {block};
+  \node[right] at (\colO+0.12,-1.0) {creation};
+  \node at (\colO-0.35,-0.92) {\cstep{2}};
+
+  % Step 3: Broadcast block
+  \draw[bcast] (\colO,-1.35) -- node[above] {block} (\colA,-1.35);
+  \draw[bcast] (\colO,-1.35) -- (\colB,-1.35);
+  \draw[bcast] (\colO,-1.35) -- (\colN,-1.35);
+  \node at (\colA-0.35,-1.35) {\cstep{3}};
+
+  % Step 4: Execution
+  \node at (\colA-0.35,-1.95) {\cstep{4}};
+  \node at (\colN+0.35,-1.95) {\cstep{4}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-1.7) -- (\colN+0.1,-1.7)
+    node[midway,below=2pt] {execution};
+
+  % Step 5: Commit
+  \node at (\colA-0.35,-2.6) {\cstep{5}};
+  \node at (\colN+0.35,-2.6) {\cstep{5}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.35) -- (\colN+0.1,-2.35)
+    node[midway,below=2pt] {commit};
+
+  % Legend (single line)
+  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small] (lega) at (\colC-0.2,-3.05) {%
+    \cstep{1}\,\cstep{2}\,\cstep{3}\;Ordering\quad \cstep{4}\;Execution\quad \cstep{5}\;Commit%
+  };
+\end{scope}
+\node[below=0.02cm,font=\small] at (protocola.south) {(a) Order-Execute-Commit};
+
+
+% ============ (b) Execute-Order-In-Parallel & Commit ============
+\begin{scope}[xshift=6.8cm, local bounding box=protocolb]
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+
+  \node[hdr] at (\colC,0) {Client};
+  \node[hdr] at (\colA,0) {Peer 1};
+  \node[hdr] at (\colB,0) {Peer 2};
+  \node[hdr] at (\colN,0) {Peer n};
+  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+
+  \foreach \x in {\colC,\colA,\colB,\colN,\colO}
+    \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
+
+  % Step 1: Client -> All nodes
+  \draw[msg] (\colC,-0.45) -- node[above] {$T_i$} (\colA,-0.45);
+  \draw[msg] (\colC,-0.45) -- (\colB,-0.45);
+  \draw[msg] (\colC,-0.45) -- (\colN,-0.45);
+  \node at (\colC-0.35,-0.45) {\cstep{1}};
+
+  % Step 2: Execution on all nodes
+  \node at (\colA-0.35,-1.0) {\cstep{2}};
+  \node at (\colN+0.35,-1.0) {\cstep{2}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-0.75) -- (\colN+0.1,-0.75)
+    node[midway,below=2pt] {execution};
+
+  % Step 3: Results -> Ordering Service
+  \draw[msg] (\colN,-1.45) -- (\colO,-1.45);
+  \node[right] at (\colO+0.12,-1.35) {block};
+  \node[right] at (\colO+0.12,-1.5) {creation};
+  \node at (\colN-0.35,-1.45) {\cstep{3}};
+
+  % Step 4: Block broadcast
+  \draw[bcast] (\colO,-1.95) -- node[above] {block} (\colA,-1.95);
+  \draw[bcast] (\colO,-1.95) -- (\colB,-1.95);
+  \draw[bcast] (\colO,-1.95) -- (\colN,-1.95);
+  \node at (\colA-0.35,-1.95) {\cstep{4}};
+
+  % Step 5: Commit
+  \node at (\colA-0.35,-2.6) {\cstep{5}};
+  \node at (\colN+0.35,-2.6) {\cstep{5}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.35) -- (\colN+0.1,-2.35)
+    node[midway,below=2pt] {commit};
+
+  % Legend (single line)
+  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small] at (\colC-0.2,-3.05) {%
+    \cstep{1}\,\cstep{2}\;Execution\quad \cstep{3}\,\cstep{4}\;Ordering\quad \cstep{5}\;Commit%
+  };
+\end{scope}
+\node[below=0.02cm,font=\small] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit};
+
+
+% ============ (c) Execute-Order-Validate-Commit ============
+\begin{scope}[xshift=13.6cm, local bounding box=protocolc]
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+
+  \node[hdr] at (\colC,0) {Client};
+  \node[hdr] at (\colA,0) {Peer 1};
+  \node[hdr] at (\colB,0) {Peer 2};
+  \node[hdr] at (\colN,0) {Peer n};
+  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+
+  \foreach \x in {\colC,\colA,\colB,\colN,\colO}
+    \draw[lifeline] (\x,-0.2) -- (\x,-3.65);
+
+  % Step 1: Client -> Node 1
+  \draw[msg] (\colC,-0.45) -- node[above] {$T_i$} (\colA,-0.45);
+  \node at (\colC-0.35,-0.45) {\cstep{1}};
+
+  % Step 2: Simulation
+  \node[right] at (\colA+0.12,-0.78) {simulation};
+  \node at (\colA-0.35,-0.78) {\cstep{2}};
+
+  % Step 3: Response
+  \draw[msg] (\colA,-1.08) -- (\colC,-1.08);
+  \node[above] at ($({\colC},-1.08)!0.5!({\colA},-1.08)$) {response};
+  \node at (\colC-0.35,-1.08) {\cstep{3}};
+
+  % Step 4: Client -> Ordering Service
+  \draw[msg] (\colC,-1.45) -- node[above] {$[T_i$, RWSet$]$} (\colO,-1.45);
+  \node at (\colC-0.35,-1.45) {\cstep{4}};
+
+  % Step 5: Block creation + broadcast
+  \node[right] at (\colO+0.12,-1.7) {block};
+  \node[right] at (\colO+0.12,-1.85) {creation};
+  \draw[bcast] (\colO,-2.1) -- node[above] {block} (\colA,-2.1);
+  \draw[bcast] (\colO,-2.1) -- (\colB,-2.1);
+  \draw[bcast] (\colO,-2.1) -- (\colN,-2.1);
+  \node at (\colA-0.35,-2.1) {\cstep{5}};
+
+  % Step 6: Validation
+  \node at (\colA-0.35,-2.6) {\cstep{6}};
+  \node at (\colN+0.35,-2.6) {\cstep{6}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.38) -- (\colN+0.1,-2.38)
+    node[midway,below=2pt] {validation};
+
+  % Step 7: Commit
+  \node at (\colA-0.35,-3.15) {\cstep{7}};
+  \node at (\colN+0.35,-3.15) {\cstep{7}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.93) -- (\colN+0.1,-2.93)
+    node[midway,below=2pt] {commit};
+
+  % Legend (single line)
+  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small,align=left] at (\colC-0.2,-3.55) {%
+    \cstep{1}\,\cstep{2}\,\cstep{3}\;Simulation\quad \cstep{4}\,\cstep{5}\;Ordering\quad
+    \cstep{6}\;Validation\quad \cstep{7}\;Commit%
+  };
+\end{scope}
+\node[below=0.02cm,font=\small] at (protocolc.south) {(c) Execute-Order-Validate-Commit};
+
+\end{tikzpicture}

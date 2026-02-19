@@ -1,9 +1,31 @@
-One can think of the data corresponding to  a transaction as being split to two parts: (a) a public part which ends up being in the block and is comprised of the public read-write set and the hashed read-write set, and (b) a private part which consists of the pre-images to the hashed writes that does not end up inside the block.
+During the simulation phase, each endorsing node stores the generated private write-sets in its local transient store and proactively pushes them to a subset of authorized remote peers via a peer-to-peer protocol. For each collection involved in the transaction, the endorser sends the entire collection's private write-set as a single message to eligible peers. The set of target peers is determined by evaluating the collection's membership policy $\mathcal{M}$ against the current view of active peers in the network. The number of peers targeted is governed by $n_{dissem}$, and the endorser waits until at least $n_{required}$ peers acknowledge receipt before returning the signed endorsement response to the client. This eager strategy ensures that the private data is already present on most authorized nodes by the time the corresponding block is received, minimizing the need for reactive pulling during the commit phase. If the endorser cannot obtain $n_{required}$ acknowledgments before the timeout, it returns a dissemination failure to the client; the client may then retry with a different set of endorsers or abort the transaction. The endorser itself does not re-attempt dissemination, as the client is responsible for orchestrating retries---this keeps the endorser stateless with respect to dissemination attempts. Algorithm~\ref{alg:dissemination} summarizes the protocol.
 
-Prior to the transaction being sent to be included in a block, the pre-images are being locally stored on the peers that take part in executing the transaction. 
-{this breaks abstraction, but I don't see a way out of this}
-Clearly, peers that did not take part in executing the transaction need to obtain the pre-images in some way for the private data to be available to the application. 
-
-While relying on fetching data from peers that possess the pre-images upon demand is possible, it is not a fault tolerant approach since if the peers that possess the pre-images are unreachable or crash, the private data is forever lost and as a result, user experience is impaired. 
-
-To that end, in addition to storing the pre-images locally, each peer also disseminates them to a random set of remote peers. The set is selected by applying the policy that defines the collection membership on the set of peers that are considered alive at that time, filtering out non-eligible peers and then taking a random subset of the result. \\The peers that receive the pre-images, store them locally and then return acknowledgments without which the transaction is not sent to be included in a block. This is done to ensure the pre-images will be available at a later point in time in spite of faults, but can also be tuned and relaxed upon demand. 
+\begin{algorithm}[h]
+\centering
+\small
+\begin{tabular}{|p{0.92\columnwidth}|}
+\hline
+\textbf{Proactive Dissemination Protocol} \\
+\hline
+\textbf{Input:} Transaction $tx$ with private write-sets \\[3pt]
+\textbf{At Endorsing Node} $e$ (after simulation): \\
+\quad 1. Store all private write-sets for $tx$ in local transient store \\
+\quad 2. \textbf{for each} collection $c$ in $tx$'s private write-sets \textbf{do} \\
+\quad\quad\quad $W_c \leftarrow$ collection $c$'s private write-set \\
+\quad\quad\quad $P \leftarrow \text{SelectAuthorizedPeers}(c.\mathcal{M}, c.n_{dissem})$ \\
+\quad\quad\quad \textbf{for each} peer $p_i \in P$ \textbf{do} \\
+\quad\quad\quad\quad\quad Push $(tx.id, c.id, W_c)$ to $p_i$ via gossip \\
+\quad\quad\quad Wait until $|\{p_i : \text{ACK received}\}| \geq c.n_{required}$ \\
+\quad\quad\quad\quad\quad or timeout expires \\
+\quad\quad\quad \textbf{if} timeout \textbf{then} return dissemination failure \\
+\quad 3. Return signed endorsement response to client \\[3pt]
+\textbf{At Receiving Peer} $p_i$: \\
+\quad 1. Verify sender $e$ is authorized for collection $c$ \\
+\quad 2. Verify ledger height of $tx$ is within acceptable range \\
+\quad 3. Store $(tx.id, c.id, W_c)$ in local transient store \\
+\quad 4. Send ACK to endorser $e$ \\
+\hline
+\end{tabular}
+\caption{Proactive dissemination protocol executed during the simulation phase. The endorser pushes each collection's full private write-set to authorized peers before returning the endorsement.}
+\label{alg:dissemination}
+\end{algorithm}

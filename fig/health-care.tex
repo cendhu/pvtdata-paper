@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+    >=Stealth,
+    every node/.style={font=\large},
+    org/.style={draw, rounded corners=2pt, minimum width=2.2cm, minimum height=0.6cm,
+                font=\large\bfseries, text=white, align=center},
+    arr/.style={->, semithick},
+]
+
+% --- Organization boxes (top row, tighter) ---
+\node[org, fill={rgb,255:red,128;green,0;blue,64}]  (ha) at (0, 0)    {Hospital A};
+\node[org, fill={rgb,255:red,200;green,130;blue,0}]  (hb) at (2.5, 0)  {Hospital B};
+\node[org, fill={rgb,255:red,107;green,142;blue,35}] (hc) at (5.0, 0)  {Hospital C};
+\node[org, fill={rgb,255:red,220;green,20;blue,20}]  (reg) at (7.5, 0) {Regulator};
+\node[org, fill={rgb,255:red,0;green,90;blue,200}]   (ins) at (10.0, 0) {Insurance};
+
+% --- Replicated Ledger bar ---
+\node[draw, fill={rgb,255:red,60;green,60;blue,180}, text=white, rounded corners=2pt,
+      minimum width=11.5cm, minimum height=0.65cm, font=\large,
+      anchor=north] (ledger) at (5.0,-0.55)
+    {Patient ID, Patient Electronic Medical Record (EMR), Invoice};
+\node[font=\large\bfseries, anchor=west] at (10.9,-0.88) {Replicated Ledger};
+
+% --- Access control arrows and wallet icons ---
+\foreach \x in {0, 2.5, 5.0} {
+    \draw[arr] (\x,-1.4) -- (\x,-1.05);
+    \node[font=\large, anchor=north] at (\x,-1.4) {Access control};
+
+    \node[font=\large, anchor=north] at (\x,-1.85) {Patient's wallet};
+
+    % Wallet (3D box)
+    \begin{scope}[shift={(\x,-2.95)}]
+        \draw[thick, fill=white] (-0.5,0) -- (0.5,0) -- (0.5,0.55) -- (-0.5,0.55) -- cycle;
+        \draw[thick, fill=gray!15] (0.5,0) -- (0.68,0.18) -- (0.68,0.73) -- (0.5,0.55);
+        \draw[thick, fill=gray!8] (-0.5,0.55) -- (-0.32,0.73) -- (0.68,0.73) -- (0.5,0.55);
+    \end{scope}
+}
+
+\end{tikzpicture}

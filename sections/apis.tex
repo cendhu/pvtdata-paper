@@ -1,52 +1,28 @@
-\begin{table*}
-    \vspace{-.2cm}
-        \small{
-            \centering
-            \caption{APIs to write a smart-contract}
-            \label{table:apis}
-            \begin{tabular} {| p{3.4cm} | p{13.3cm} |}
-                \hline
-                \textit{API} & \textit{Description} \\ \hline
-                \texttt{GetState}(k) & $\rightarrow$ returns the value of the
-                                         specified key \textit{k} from the public data space
-                                         \newline
-                                         $\rightarrow$ records the key along with the read version in the
-                                         transaction's public data read-set
-                                         \\ \hline
-                \texttt{PutState}(k, v) & $\rightarrow$ puts the specified key \textit{k} and value \textit{v}
-                                         into the transaction's public data write-set
-                                         \\ \hline
-                \texttt{DelState}(k) & $\rightarrow$ records the specified key \textit{k} to be deleted in
-                                         the transaction's public data write-set
-                                         \\ \hline
-                \texttt{GetPrivateData}(c, k) & $\rightarrow$ returns the value of the specified key
-                                                \textit{k} from the specified collection \textit{c}
-                                                \newline 
-                                                $\rightarrow$ records the hash of the key along with the read
-                                                version in the transaction's hashed data read-set
-                                                \\ \hline
-                \texttt{GetPrivateDataHash}(c, k) & $\rightarrow$ returns the hash of the value of the
-                                                    specified key \textit{k} from the
-                                                    specified collection \textit{c}
-                                                    \newline
-                                                    $\rightarrow$ records the hash of
-                                                    the key and the read version in the
-                                                    transaction's hashed data read-set.
-                                                    \\ \hline
-                \texttt{PutPrivateData}(c, k, v) & $\rightarrow$ puts the specified key \textit{k} and
-                                                 value \textit{v} into the transaction's
-                                                private data write-set associated with
-                                                the specified collection \textit{c}
-                                                \newline
-                                                $\rightarrow$ records the hash of the key and value into
-                                                the transaction's hashed data write-set
-                                                \\ \hline
-                \texttt{DelPrivateData}(c, k) & $\rightarrow$ records the specified key \textit{k} to
-                                                be deleted in the transaction's private write-set
-                                                associated with the specified collection \textit{c}
-                                                \\ \hline
-            \end{tabular}
-        }
-    \vspace{-.2cm}
+\begin{table*}[t]
+\small
+\centering
+\caption{Smart-contract APIs for public and private data operations, with a concrete example showing how a sequence of API calls produces partitioned read-write sets.}
+\label{table:apis}
+\begin{tabular}{| l | l | l |}
+\hline
+\textit{API} & \textit{State Effect} & \textit{Read-/Write-Set Effect} \\ \hline
+\texttt{GetState}($k$) & Returns value of $k$ from public state & Records ($k$, version) in public read-set \\ \hline
+\texttt{PutState}($k$, $v$) & --- & Records ($k$, $v$) in public write-set \\ \hline
+\texttt{DelState}($k$) & --- & Records delete of $k$ in public write-set \\ \hline
+\texttt{GetPrivateData}($c$, $k$) & Returns value of $k$ from collection $c$ & Records ($H(k)$, version) in hashed read-set \\ \hline
+\texttt{GetPrivateDataHash}($c$, $k$) & Returns $H(v)$ for key $k$ in collection $c$ & Records ($H(k)$, version) in hashed read-set \\ \hline
+\texttt{PutPrivateData}($c$, $k$, $v$) & --- & Records ($k$, $v$) in private write-set; ($H(k)$, $H(v)$) in hashed write-set \\ \hline
+\texttt{DelPrivateData}($c$, $k$) & --- & Records delete of $k$ in private write-set; delete marker in hashed write-set \\ \hline
+\texttt{PurgePrivateData}($c$, $k$) & Permanently removes $k$ from local storage & Like \texttt{Del}, but purges history to comply with ``right to forget'' policies \\ \hline
+\end{tabular}
+
+\vspace{4pt}
+\begin{minipage}[t]{\textwidth}
+\raggedright\small
+\textbf{Example.} A smart contract executes:
+\texttt{GetState}($k_1$) $\to$ \texttt{PutState}($k_1$, $v_2$) $\to$ \texttt{GetPrivateData}($c_1$, $k_2$) $\to$ \texttt{GetPrivateData}($c_2$, $k_3$) $\to$ \texttt{PutPrivateData}($c_1$, $k_2$, $v_3$) $\to$ \texttt{PutPrivateData}($c_2$, $k_3$, $v_4$). \\[2pt]
+This produces three partitioned outputs: \textbf{Public RW-Set:} R--$\{k_1, \text{ver}\}$, W--$\{k_1, v_2\}$. \quad \textbf{Hashed RW-Set:} R--$\{c_1, H(k_2), \text{ver}\}$, $\{c_2, H(k_3), \text{ver}\}$; W--$\{c_1, H(k_2), H(v_3)\}$, $\{c_2, H(k_3), H(v_4)\}$. \quad \textbf{Private Write-Sets:} Collection $c_1$: W--$\{k_2, v_3\}$; Collection $c_2$: W--$\{k_3, v_4\}$.
+\end{minipage}
+\vspace{-.3cm}
 \end{table*}
 

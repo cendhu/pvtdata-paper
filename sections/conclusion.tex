@@ -1,2 +1,3 @@
 \section{Conclusion}
-some text \ldots
+
+We presented \textit{private data collections}, a mechanism for managing private data on permissioned blockchains that stores private data off-chain on authorized peers while recording only its cryptographic hash on the replicated ledger. The design introduces a transient store, hashed read-write sets for blind validation, and a gossip-based dissemination protocol that together provide fine-grained privacy, transactional atomicity, integrity, and auditability. Our implementation in Hyperledger Fabric, merged into the codebase and production-ready since release v1.2, with continued enhancements through v2.5, demonstrates that private data collections can be integrated into an existing blockchain platform with minimal overhead, achieving throughput and latency comparable to standard transactions while significantly reducing the storage and management burden of channel-based isolation.

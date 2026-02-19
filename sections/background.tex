@@ -99,7 +99,7 @@ such that it can take into account of write-set of previous valid transactions w
     \begin{center}
 			\includegraphics[scale=0.35]{fig/peer.pdf}
   		\vspace{-.7cm}
-		\caption{\small{Various components in peer involved in simulation, validation, and commit phase.}}
+		\caption{Various components in peer involved in simulation, validation, and commit phase.}
 		\label{fig:peer}
  \end{center}
   \vspace{-.6cm}
@@ -119,3 +119,5 @@ synchronous to handle recovery after a failure. Note that the \textit{history DB
 maintains an index in the form of state to a list of \{\textit{block number},
 \textit{transaction number} within the block\} such that the actual history of each
 state can be retrieved from the \textit{block store} using the transaction's write-set.
+
+

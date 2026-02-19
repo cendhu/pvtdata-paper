@@ -1,17 +1,34 @@
-Despite hash pre-images can be disseminated to target peers before they receive the block that contains the corresponding hashes, a robust solution is needed with withstand network partitions and peer crashes which prevent the hash pre-images from reaching all the required peers. Furthermore, if new peers are added to the Blockchain, they can only obtain the required pre-images by pulling them from peers that posses them.
+Prior to the commit of a block, each peer analyzes the transactions and determines if it is missing authorized private data. For each valid transaction, the peer checks every collection referenced in the hashed write-set: if the peer's organization is a member of the collection and the corresponding private write-set is not already present in the local transient store, the collection is marked as missing.
 
-To that end, prior to committing a block to the ledger, a peer iterates through all hashed key writes in all transactions of the Block and analyzes whether it needs to pull private data for each hashes key write. A hashed key write is considered as a viable candidate for pulling pre-images if:
-\begin{itemize}
-	\item The transaction passed validation of endorsement policies {Are we into abstracting out EPs? If yes then how should I phrase this?}. This is needed in order to prevent a denial-of-service attack in which a malicious party creates  transactions with hashed writes for which there are no pre-image in any peer in the network. Peers would try to pull these transactions and fail, hence considerably slowing down throughput.
-	\item Evaluation of the collection policy on the peer's identity returns "true" {Once we define collection policies more abstractly we need to change this as well}: this is required since peers that receive pre-image requests for a certain hashed write also evaluate the same collection policy on the requester peer's identity in order to determine if that peer is part of the collection the hashed write is associated with.
-	\item Whether the peer is missing the pre-image from its transient store, since by definition this means the pre-image hasn't been disseminated to the peer before the commit of the block.
-	\item {Should we mention purged private data?}
-\end{itemize}
+The retrieval process, described in Algorithm~\ref{alg:retrieval}, employs a prioritized pull strategy. When a peer identifies missing data, it constructs a digest for each missing entry---identified by the tuple (transaction ID, namespace, collection, block number, transaction index)---and first attempts to fetch the full collection-level private write-set from the peers that endorsed the transaction, as they are guaranteed to have possessed the data during simulation. If those nodes are unreachable, the requester broadcasts requests to other authorized collection members via the gossip network. Upon receiving a response containing the private write-set, the requester validates it by hashing the data and comparing the result to the hash recorded in the block, ensuring data integrity even when fetching from potentially untrusted neighbors. Retrieval attempts use a fixed-interval retry bounded by a configurable time threshold to avoid overwhelming the network during periods of high congestion.
 
-Once the peer decides it needs to pull a hashed write, it needs to select potential peers which might have the pre-image it needs, and send them requests for the digests.
-Upon reception of responses containing pre-images, the peer validates that the hashes on the pre-images received matches the hashed write in the block. It follows from the collision resistance property of the cryptographic hash function that if the responding peer sent a pre-image of a hashed write, then with overwhelming probability, the pre-image is identical to all pre-images in all peers in the network, hence consistency is preserved.
-
-When sending requests for pre-images, a requester peer doesn't know up-front whether the responder peer has the pre-image, and every such "wrong guess" results in a retry which delays the block commit and thus hinders performance.
-
-For this reason, the peers prioritize requesting a pre-image from the peers which endorsed the transaction {This is very Fabric specific, so we might want to remove this?} from which the hashed write originated. This is possible because peers constantly maintain a membership view of alive peers by periodically disseminating heartbeats. 
-
+\begin{algorithm}[h]
+\centering
+\small
+\begin{tabular}{|p{0.92\columnwidth}|}
+\hline
+\textbf{Reactive Retrieval Protocol} \\
+\hline
+\textbf{Input:} Block $B$ with hashed write-sets, local transient store \\[3pt]
+\textbf{At Committing Peer} $p$ (before commit): \\
+\quad 1. \textbf{for each} transaction $tx \in B$ \textbf{do} \\
+\quad\quad\quad \textbf{if} $tx$ fails endorsement policy \textbf{then skip} \\
+\quad 2. \textbf{for each} collection $c$ referenced in $tx$'s hashed write-set \textbf{do} \\
+\quad\quad\quad \textbf{if} $p \in c.\mathcal{M}$ \textbf{and} $c$'s private write-set $\notin$ transient store \\
+\quad\quad\quad\quad\quad Add digest $(tx.id, c.ns, c.id, B.num, tx.idx)$ to MissingSet \\
+\quad 3. \textbf{if} MissingSet $= \emptyset$ \textbf{then} proceed to commit \\
+\quad 4. $E \leftarrow$ endorsers of $tx$ \quad\quad\quad \textit{// priority targets} \\
+\quad 5. Send pull request with MissingSet digests to $E$ \\
+\quad 6. \textbf{for each} private write-set $W_c$ received \textbf{do} \\
+\quad\quad\quad Verify $H(W_c)$ matches on-chain hash \\
+\quad\quad\quad \textbf{if} valid \textbf{then} store $W_c$ in transient store \\
+\quad 7. \textbf{if} MissingSet $\neq \emptyset$ \textbf{then} \\
+\quad\quad\quad Broadcast pull request to gossip network \\
+\quad\quad\quad Retry with fixed-interval sleep \\
+\quad 8. Proceed to commit (missing data tracked \\
+\quad\quad\quad for background reconciliation) \\
+\hline
+\end{tabular}
+\caption{Reactive retrieval protocol executed before the commit phase. Missing private write-sets are identified per collection; endorsers are prioritized as data sources with gossip as a fallback.}
+\label{alg:retrieval}
+\end{algorithm}

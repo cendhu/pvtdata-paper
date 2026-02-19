@@ -1,0 +1,75 @@
+\begin{tikzpicture}[
+    >=Stealth,
+    every node/.style={font=\large},
+    actor/.style={draw, rounded corners=2pt, minimum height=0.6cm,
+                  font=\large, text=white, align=center, inner sep=3pt},
+    arr/.style={->, thick},
+]
+
+% --- Column positions (wider spacing to prevent overlap) ---
+\def\colL{0}
+\def\colWS{3.8}
+\def\colMfg{7.6}
+\def\colDist{10.6}
+\def\colRet{13.2}
+\def\colCust{16.0}
+
+% --- Row spacing ---
+\def\rowA{0}
+\def\rowB{-0.9}
+\def\rowC{-1.8}
+\def\rowD{-3.0}
+\def\rowE{-3.9}
+
+% --- Farmers (left column) ---
+\node[actor, fill={rgb,255:red,128;green,0;blue,64}]  (c1) at (\colL, \rowA)  {Cacao Farmer ($C_1$)};
+\node[actor, fill={rgb,255:red,128;green,0;blue,64}]  (c2) at (\colL, \rowB)  {Cacao Farmer ($C_2$)};
+\node[actor, fill={rgb,255:red,128;green,0;blue,64}]  (c3) at (\colL, \rowC)  {Cacao Farmer ($C_3$)};
+\node[actor, fill={rgb,255:red,139;green,90;blue,43}]  (m1) at (\colL, \rowD)  {Dairy Farmer ($M_1$)};
+\node[actor, fill={rgb,255:red,139;green,90;blue,43}]  (m2) at (\colL, \rowE)  {Dairy Farmer ($M_2$)};
+
+% --- Wholesale Suppliers (second column) ---
+\node[actor, fill={rgb,255:red,200;green,130;blue,0}, text width=2.4cm] (s1) at (\colWS,-0.45)
+    {Wholesale Cacao\\[-1pt]Supplier $S_1$};
+\node[actor, fill={rgb,255:red,200;green,130;blue,0}, text width=2.4cm] (s2) at (\colWS,-1.95)
+    {Wholesale Cacao\\[-1pt]Supplier $S_2$};
+\node[actor, fill={rgb,255:red,200;green,130;blue,0}, text width=2.4cm] (s3) at (\colWS,-3.45)
+    {Wholesale Dairy\\[-1pt]Supplier ($S_3$)};
+
+% --- Chocolate Manufacturer (center) ---
+\node[actor, fill={rgb,255:red,107;green,142;blue,35}, text width=2.2cm, minimum height=0.7cm]
+    (mfg) at (\colMfg,-1.95) {Chocolate\\[-1pt]Manufacturer};
+
+% --- Distributors ---
+\node[actor, fill={rgb,255:red,0;green,90;blue,156}] (d1) at (\colDist,-0.45) {Distributor};
+\node[actor, fill={rgb,255:red,0;green,90;blue,156}] (d2) at (\colDist,-3.45) {Distributor};
+
+% --- Retailers (right column) ---
+\node[actor, fill={rgb,255:red,75;green,0;blue,130}]  (r1) at (\colRet, \rowA)  {Retailer ($R_1$)};
+\node[actor, fill={rgb,255:red,75;green,0;blue,130}]  (r2) at (\colRet, \rowB)  {Retailer ($R_2$)};
+\node[actor, fill={rgb,255:red,75;green,0;blue,130}]  (r3) at (\colRet, \rowD)  {Retailer ($R_3$)};
+\node[actor, fill={rgb,255:red,75;green,0;blue,130}]  (r4) at (\colRet, \rowE)  {Retailer ($R_4$)};
+
+% --- Customers ---
+\node[actor, fill={rgb,255:red,0;green,100;blue,0}] (cust) at (\colCust,-1.95) {Customers};
+
+% --- Arrows ---
+\draw[arr] (c1.east) -- (s1.west);
+\draw[arr] (c2.east) -- (s1.west);
+\draw[arr] (c2.east) -- (s2.west);
+\draw[arr] (c3.east) -- (s2.west);
+\draw[arr] (m1.east) -- (s3.west);
+\draw[arr] (m2.east) -- (s3.west);
+\draw[arr] (s1.east) -- (mfg.west);
+\draw[arr] (s2.east) -- (mfg.west);
+\draw[arr] (s3.east) -- (mfg.west);
+\draw[arr] (mfg.east) -- (d1.west);
+\draw[arr] (mfg.east) -- (d2.west);
+\draw[arr] (d1.east) -- (r1.west);
+\draw[arr] (d1.east) -- (r2.west);
+\draw[arr] (d2.east) -- (r3.west);
+\draw[arr] (d2.east) -- (r4.west);
+\draw[arr] (r2.east) -- (cust.west);
+\draw[arr] (r3.east) -- (cust.west);
+
+\end{tikzpicture}

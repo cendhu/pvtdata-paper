@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+    >=Stealth,
+    every node/.style={font=\large},
+    actor/.style={draw, rounded corners=2pt, minimum width=2.2cm, minimum height=0.6cm,
+                  font=\large\bfseries, text=white, align=center},
+    db/.style={cylinder, draw, shape border rotate=90, aspect=0.25,
+               minimum width=1.6cm, minimum height=1.1cm,
+               font=\small, align=center, text width=1.5cm, inner sep=2pt},
+    repl/.style={<->, thick, shorten <=2pt, shorten >=2pt},
+]
+
+% --- Column positions (wider spacing) ---
+\def\colA{0}
+\def\colB{3.2}
+\def\colC{6.4}
+\def\colD{9.6}
+\def\colE{12.8}
+
+% --- Actor headers ---
+\node[actor, fill={rgb,255:red,200;green,130;blue,0}] at (\colA,0)   {Farmer};
+\node[actor, fill={rgb,255:red,128;green,0;blue,64}]  at (\colB,0)   {Supplier};
+\node[actor, fill={rgb,255:red,107;green,142;blue,35}] at (\colC,0)  {Manufacturer};
+\node[actor, fill={rgb,255:red,0;green,90;blue,156}]   at (\colD,0)  {Distributor};
+\node[actor, fill={rgb,255:red,75;green,0;blue,130}]   at (\colE,0)  {Retailer};
+
+% --- Collection 1: Farmer <-> Supplier ---
+\node[db] (dbA1) at (\colA,-1.3) {Order,\\Invoice,\\Payment};
+\node[db] (dbB1) at (\colB,-1.3) {Order,\\Invoice,\\Payment};
+\draw[repl] (dbA1.east) -- (dbB1.west);
+
+% --- Collection 2: Supplier <-> Manufacturer ---
+\node[db] (dbB2) at (\colB,-2.9) {Order,\\Invoice,\\Payment};
+\node[db] (dbC2) at (\colC,-2.9) {Order,\\Invoice,\\Payment};
+\draw[repl] (dbB2.east) -- (dbC2.west);
+
+% --- Collection 3: Manufacturer <-> Distributors ---
+\node[db] (dbC3) at (\colC,-1.3) {Order,\\Invoice,\\Payment};
+\node[db] (dbD3) at (\colD,-1.3) {Order,\\Invoice,\\Payment};
+\draw[repl] (dbC3.east) -- (dbD3.west);
+
+% --- Collection 4: Distributors <-> Retailer ---
+\node[db] (dbD4) at (\colD,-2.9) {Order,\\Invoice,\\Payment};
+\node[db] (dbE4) at (\colE,-2.9) {Order,\\Invoice,\\Payment};
+\draw[repl] (dbD4.east) -- (dbE4.west);
+
+% --- Collection 5: Retailer only ---
+\node[db] (dbE5) at (\colE,-1.3) {Sales\\record};
+
+% --- Replicated Ledger bar ---
+\node[draw, fill={rgb,255:red,60;green,60;blue,180}, text=white, rounded corners=2pt,
+      minimum width=14.0cm, minimum height=0.6cm, font=\normalsize,
+      anchor=north] (ledger) at (6.4,-3.85)
+    {Order IDs, Product \& Lot IDs, Parties involved in each transaction, Hash of private data};
+
+\node[font=\normalsize, anchor=north] at (6.4,-4.5) {Replicated Ledger};
+
+\end{tikzpicture}

@@ -1,0 +1,24 @@
+\section{Private Data Dissemination and Retrieval}
+\label{s:gossip}
+Since private data is excluded from the consensus-driven block delivery, we utilize a specialized peer-to-peer protocol to ensure data availability and fault tolerance. The protocol operates in two complementary phases: proactive dissemination during simulation, and reactive retrieval during commit.
+
+\subsection{Proactive Dissemination}
+\label{s:dissemination}
+\input{sections/dissemination_gossip.tex}
+
+\subsection{Reactive Retrieval}
+\label{s:retrieval}
+\input{sections/fetching_gossip.tex}
+
+\subsection{Dynamic Membership and Reconciliation}
+\label{s:dynamic-membership}
+Collection membership may change over the lifetime of a network. When a new member is added to a collection's membership policy $\mathcal{M}$, the peer detects the configuration change during the commit of the block containing the policy update and initiates a retroactive reconciliation process. Specifically, the peer scans the committed blocks for historical transactions that wrote to the collection and marks them as missing eligible data. A background reconciliation service then periodically pulls these historical private write-sets from existing collection members using the same hash-based verification as the reactive retrieval protocol.
+
+When a member is removed from a collection, the removed peer retains access only to data committed before its removal. The updated membership policy excludes it from both proactive dissemination and reactive retrieval eligibility checks, ensuring that future private data is not shared with the departing organization.
+
+\subsection{Consistency and Fault Tolerance}
+A critical property of the retrieval mechanism is its idempotency: since multiple peers may attempt to pull the same missing data concurrently, the system utilizes the versioned hashes on the public ledger as unique identifiers, ensuring that nodes eventually converge on a consistent Private State even in the presence of network partitions or concurrent block commits.
+
+\smallskip
+\noindent\textbf{Remark} (Integrity Independence). \textit{Data integrity is preserved even when peers attempt to provide fraudulent pre-images, because the requester validates every incoming data piece against the on-chain hash recorded during the consensus phase. This integrity guarantee operates independently of the CFT assumption described in \S\ref{pdc}: while the \textbf{liveness} of dissemination depends on honest peers following the protocol, the \textbf{correctness} of retrieved data is ensured solely by cryptographic hash verification. A single honest data source is sufficient for correctness.}
+

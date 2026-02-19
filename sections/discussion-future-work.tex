@@ -1,17 +1,7 @@
 \section{Discussion and Future Work}
-\subsection{Other Supported Features and Use-Cases}
-\subsubsection{Collection ACL}
-\par
-\textbf{(1) Members Only Read-Write.} 
-\par
-\textbf{(2) Members Only Write and All Can Read.}
-\par
-\textbf{(3) Members Only Read and All Can Write.}
-\par
-\textbf{(4) All Can Read-Write.}
 
-\subsubsection{Moving Data Between Collections}
-\par
+Private data collections strike a practical balance between privacy and verifiability in permissioned blockchains. Storing private data off-chain while recording only its hash on the ledger reduces the on-chain storage footprint, and the dedicated dissemination protocol ensures that private information reaches only authorized participants. Collection-level membership policies provide fine-grained access control, and the ability to move data between collections supports the dynamic sharing scenarios common in enterprise workflows.
 
-some text \ldots
+\textit{Limitations.} While private data collections protect the content of private data, they do not hide the \textit{metadata} of private transactions. Since the hashed read-write sets recorded on the public ledger reference specific collections, and collection membership policies are visible to all network participants, any peer can infer which organizations are involved in a private transaction---even without access to the underlying data. For example, in the food supply chain scenario, a competitor observing that a transaction wrote to a collection shared between a specific manufacturer and supplier could infer the existence of a business relationship between them, even though the terms of the deal remain hidden. Addressing this metadata leakage would require techniques such as zero-knowledge proofs or oblivious dissemination, which we identify as directions for future work.
 
+Several directions remain for future work. Attribute-based access control (ABAC) could offer richer policies than the current collection membership model. Integrating zero-knowledge proofs with private data collections would enable verifiable computations over private state without revealing the underlying data. A formal verification of the mechanism's security and privacy guarantees would strengthen confidence in its correctness. Finally, a more comprehensive performance study---spanning diverse workloads, network scales, and failure scenarios---would further characterize the system's scalability limits.

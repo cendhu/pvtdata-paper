@@ -4,20 +4,30 @@
 % Removed the requirement to include *bbl file in here. (AhmetSacan, Sep2012)
 % Fixed the equation on page 3 to prevent line overflow. (AhmetSacan, Sep2012)
 
- \documentclass[sigplan,10pt]{acmart}
 
+
+\documentclass[sigconf, nonacm]{acmart}
+
+%% The following content must be adapted for the final version
+% paper-specific
 \newcommand\vldbdoi{XX.XX/XXX.XX}
 \newcommand\vldbpages{XXX-XXX}
+% issue-specific
 \newcommand\vldbvolume{14}
 \newcommand\vldbissue{1}
 \newcommand\vldbyear{2020}
+% should be fine as it is
 \newcommand\vldbauthors{\authors}
 \newcommand\vldbtitle{\shorttitle} 
-\newcommand\vldbavailabilityurl{http://vldb.org/pvldb/format_vol14.html}
-\newcommand\vldbpagestyle{plain}
+% leave empty if no availability url should be set
+\newcommand\vldbavailabilityurl{URL_TO_YOUR_ARTIFACTS}
+% whether page numbers should be shown or not, use 'plain' for review versions, 'empty' for camera ready
+\newcommand\vldbpagestyle{plain} 
+
 % \documentclass{vldb}
 % \renewcommand{\baselinestretch}{0.99}
 \usepackage{graphicx}
+\usepackage{wrapfig}
 % \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
 \usepackage{enumitem}
 \usepackage{hyperref, xcolor}
@@ -29,21 +39,25 @@
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{authblk}
 \usepackage{multirow}
 \usepackage{bbding}
 \usepackage{pifont}
 \usepackage{wasysym}
+\let\Bbbk\relax
 \usepackage{amssymb}
 \usepackage{array,multirow}
 \usepackage{cleveref}
 \usepackage{soul}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing,shapes.geometric}
+\newcommand{\cstep}[1]{\tikz[baseline=-0.5ex]{\node[circle,fill=black!70,text=white,inner sep=0pt,minimum size=8pt,font=\fontsize{5.5}{6}\selectfont\bfseries]{#1};}}
 
 % \crefformat{section}{\S#2#1#3} % see manual of cleveref, section 8.2.1
 % \crefformat{subsection}{\S#2#1#3}
 % \crefformat{subsubsection}{\S#2#1#3}
 
 \usepackage{url}
+\usepackage{algorithm}
 % \usepackage{balance}
 
 % \newcommand\longvar[1]{\mathchardef\UrlBreakPenalty=100
@@ -58,10 +72,8 @@
 \newcommand{\yacov}[1]{\textcolor{blue}{$\ll${Yacov: #1}$\gg$}}
 
 
-\usepackage{nopageno}
-% allow hypenation at random places
-% but increaces total size of the text
-\sloppy
+% allow slight stretch to avoid overfull hboxes without full \sloppy
+\emergencystretch=1em
 
 \begin{document}
 
@@ -75,12 +87,10 @@
 % \author[1]{}
 % \affil[ ]{}
 % \affil[ ]{}
-%\author{
-%	\alignauthor
-%	Senthil Nathan\thanks{equally contributed} , Chander Govindarajan\footnotemark[1] , Adarsh Saraf\footnotemark[1] , \\Manish Sethi$^{\$}$, Praveen Jayachandran$^{+}$\\
-%	$^{+}$\affaddr{IBM Research, India}\\$^{\$}$\affaddr{IBM RTP, USA}
-%	\email{\normalsize{(snatara7, chandg12, adasaraf, praveen.j)@in.ibm.com, manish.sethi1@ibm.com}}
-%}
+% \author{
+% 	Senthil Nathan, Chander Govindarajan, Adarsh Saraf, Manish Sethi, Praveen Jayachandran\\
+% 	\affaddr{IBM Research}
+% }
 % possible, but not really needed or used for PVLDB:
 %\subtitle{[Extended Abstract]
 %\titlenote{A full version of this paper is available as\textit{Author's Guide to Preparing ACM SIG Proceedings Using \LaTeX$2_\epsilon$\ and BibTeX} at \texttt{www.acm.org/eaddress.htm}}}
@@ -166,6 +176,21 @@
 % number that will appear in the \additionalauthors section.
 %}
 
+\author{Senthilnathan Natarajan}
+\affiliation{\institution{IBM Research}}
+
+\author{Manish Sethi}
+\affiliation{\institution{IBM Research}}
+
+\author{Yacov Manevich}
+\affiliation{\institution{Ava Labs}}
+
+\author{Artem Barger}
+\affiliation{\institution{TODO}}
+
+\author{Dave Enyeart}
+\affiliation{\institution{IBM}}
+
 \input{sections/abstract.tex}
 
 \maketitle
@@ -203,21 +228,25 @@ ISSN 2150-8097. \\
 
 \input{sections/core-idea.tex}
 
-% \input{sections/background.tex}
-
 % \input{sections/design-public-ledger.tex}
 
 \input{sections/design-private-ledger.tex}
 
+\input{sections/gossip-protocol.tex}
+
 % \input{sections/design-gossip.tex}
+
+\input{sections/threat-model.tex}
 
 \input{sections/implementation.tex}
 
 \input{sections/evaluation.tex}
 
-\input{sections/discussion-future-work.tex}
+\input{sections/real-world-impact.tex}
 
 \input{sections/related-work.tex}
+
+\input{sections/discussion-future-work.tex}
 
 \input{sections/conclusion.tex}
 

@@ -1,2 +1,13 @@
 \section{Evaluation}
-Owner: Senthil
+
+\textbf{TODO: Evaluation experiments to include:}
+\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+    \item Throughput comparison: PDC transactions vs.\ standard transactions
+    \item Latency breakdown across the four phases (simulation, ordering, validation, commit)
+    \item Scalability with number of collections, organizations, and private data sizes
+    \item Gossip overhead: network bandwidth for dissemination and retrieval
+    \item Impact of block-to-live (purging) on performance
+    \item Comparison with channel-based isolation (the main alternative)
+    \item Failure/recovery scenarios and their performance impact
+    \item Addition of new members to the collection and sync/fetch duration
+\end{enumerate}
