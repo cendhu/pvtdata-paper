@@ -68,39 +68,39 @@
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
 
-  % Step 1: Client -> All nodes
+  % Step 1: Client -> All nodes AND Ordering Service
   \draw[msg] (\colC,-0.45) -- node[above] {$T_i$} (\colA,-0.45);
   \draw[msg] (\colC,-0.45) -- (\colB,-0.45);
   \draw[msg] (\colC,-0.45) -- (\colN,-0.45);
+  \draw[msg] (\colC,-0.45) -- (\colO,-0.45);
   \node at (\colC-0.35,-0.45) {\cstep{1}};
 
-  % Step 2: Execution on all nodes
+  % Step 2: Execution on peers (parallel with ordering)
   \node at (\colA-0.35,-1.0) {\cstep{2}};
   \node at (\colN+0.35,-1.0) {\cstep{2}};
   \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-0.75) -- (\colN+0.1,-0.75)
     node[midway,below=2pt] {execution};
 
-  % Step 3: Results -> Ordering Service
-  \draw[msg] (\colN,-1.45) -- (\colO,-1.45);
-  \node[right] at (\colO+0.12,-1.35) {block};
-  \node[right] at (\colO+0.12,-1.5) {creation};
-  \node at (\colN-0.35,-1.45) {\cstep{3}};
+  % Step 2: Ordering (parallel with execution)
+  \node[right] at (\colO+0.12,-0.85) {block};
+  \node[right] at (\colO+0.12,-1.0) {creation};
+  \node at (\colO-0.35,-0.92) {\cstep{2}};
 
-  % Step 4: Block broadcast
-  \draw[bcast] (\colO,-1.95) -- node[above] {block} (\colA,-1.95);
-  \draw[bcast] (\colO,-1.95) -- (\colB,-1.95);
-  \draw[bcast] (\colO,-1.95) -- (\colN,-1.95);
-  \node at (\colA-0.35,-1.95) {\cstep{4}};
+  % Step 3: Block broadcast
+  \draw[bcast] (\colO,-1.45) -- node[above] {block} (\colA,-1.45);
+  \draw[bcast] (\colO,-1.45) -- (\colB,-1.45);
+  \draw[bcast] (\colO,-1.45) -- (\colN,-1.45);
+  \node at (\colA-0.35,-1.45) {\cstep{3}};
 
-  % Step 5: Commit
-  \node at (\colA-0.35,-2.6) {\cstep{5}};
-  \node at (\colN+0.35,-2.6) {\cstep{5}};
-  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.35) -- (\colN+0.1,-2.35)
+  % Step 4: Commit
+  \node at (\colA-0.35,-2.1) {\cstep{4}};
+  \node at (\colN+0.35,-2.1) {\cstep{4}};
+  \draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-1.85) -- (\colN+0.1,-1.85)
     node[midway,below=2pt] {commit};
 
   % Legend (single line)
   \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small] at (\colC-0.2,-3.05) {%
-    \cstep{1}\,\cstep{2}\;Execution\quad \cstep{3}\,\cstep{4}\;Ordering\quad \cstep{5}\;Commit%
+    \cstep{1}\,\cstep{2}\;Execution \& Ordering\quad \cstep{3}\;Block Delivery\quad \cstep{4}\;Commit%
   };
 \end{scope}
 \node[below=0.02cm,font=\small] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit};

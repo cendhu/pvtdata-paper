@@ -21,6 +21,15 @@
 \node[hdr] (hn) at (\colN,0) {Peer n};
 \node[hdr, text width=0.8cm, align=center, font=\tiny] (ho) at (\colO,0) {Ordering\\[-1pt]Service};
 
+% ---- Collection C1: DB cylinders next to Peer 1 and before Peer 2 ----
+\node[cylinder, draw, shape border rotate=90, aspect=0.25,
+      minimum width=0.35cm, minimum height=0.3cm,
+      inner sep=0pt] (db1) at (\colA+0.8,0) {};
+\node[cylinder, draw, shape border rotate=90, aspect=0.25,
+      minimum width=0.35cm, minimum height=0.3cm,
+      inner sep=0pt] (db2) at (\colB-0.8,0) {};
+\draw[<->, semithick, shorten <=1pt, shorten >=1pt] (db1.east) -- node[above, font=\tiny] {$\mathcal{C}_1$} (db2.west);
+
 % ---- Lifelines ----
 \foreach \x in {\colC,\colA,\colB,\colN,\colO}
   \draw[lifeline] (\x,-0.2) -- (\x,-4.35);

@@ -1,7 +1,7 @@
 \begin{table*}[t]
 \small
 \centering
-\caption{Smart-contract APIs for public and private data operations, with a concrete example showing how a sequence of API calls produces partitioned read-write sets.}
+\caption{Smart-contract APIs for public and private data operations, with examples illustrating simulation and blind validation.}
 \label{table:apis}
 \begin{tabular}{| l | l | l |}
 \hline
@@ -19,9 +19,11 @@
 \vspace{4pt}
 \begin{minipage}[t]{\textwidth}
 \raggedright\small
-\textbf{Example.} A smart contract executes:
-\texttt{GetState}($k_1$) $\to$ \texttt{PutState}($k_1$, $v_2$) $\to$ \texttt{GetPrivateData}($c_1$, $k_2$) $\to$ \texttt{GetPrivateData}($c_2$, $k_3$) $\to$ \texttt{PutPrivateData}($c_1$, $k_2$, $v_3$) $\to$ \texttt{PutPrivateData}($c_2$, $k_3$, $v_4$). \\[2pt]
-This produces three partitioned outputs: \textbf{Public RW-Set:} R--$\{k_1, \text{ver}\}$, W--$\{k_1, v_2\}$. \quad \textbf{Hashed RW-Set:} R--$\{c_1, H(k_2), \text{ver}\}$, $\{c_2, H(k_3), \text{ver}\}$; W--$\{c_1, H(k_2), H(v_3)\}$, $\{c_2, H(k_3), H(v_4)\}$. \quad \textbf{Private Write-Sets:} Collection $c_1$: W--$\{k_2, v_3\}$; Collection $c_2$: W--$\{k_3, v_4\}$.
+\textbf{Simulation Example.} Transaction $T_i$ executes:
+\texttt{GetState}($k_1$) $\to$ \texttt{PutState}($k_1$, $v_2$) $\to$ \texttt{GetPrivateData}($c_1$, $k_2$) $\to$ \texttt{GetPrivateData}($c_2$, $k_3$) $\to$ \texttt{PutPrivateData}($c_1$, $k_2$, $v_3$) $\to$ \texttt{PutPrivateData}($c_2$, $k_3$, $v_4$). %\\[2pt]
+This produces three partitioned outputs: \textbf{Public RW-Set:} R--$\{(k_1, \text{v1})\}$, W--$\{(k_1, v_2)\}$. \quad \textbf{Hashed RW-Set:} R--$\{(c_1, H(k_2), \text{v5}), (c_2, H(k_3), \text{v5})\}$; W--$\{(c_1, H(k_2), H(v_3)), (c_2, H(k_3), H(v_4))\}$. \quad \textbf{Private Write-Sets:} $c_1$: W--$\{(k_2, v_3)\}$; $c_2$: W--$\{(k_3, v_4)\}$. Here, v1 and v5 denote the version read during simulation.
+\\[4pt]
+\textbf{Validation Example (Blind Validation).} Before $T_i$ reaches validation, another transaction $T_j$ commits and updates key $k_2$ in collection $c_1$, advancing its hashed state version from v5 to v8. This means $T_i$'s read of $k_2$ (recorded at version v5 via \texttt{GetPrivateData}) is now stale. At validation, the validator---which may not be a member of $c_1$ and has no access to the private data---performs OCC checks using only the public and hashed state: for $k_1$, it compares the read version v1 against the current public state version (\textit{match} $\to$ pass); for $H(k_2)$ in $c_1$, it compares the read version v5 against the current hashed state version v8 (\textit{mismatch} $\to$ \textbf{stale read, conflict detected}); for $H(k_3)$ in $c_2$, v5 still matches (\textit{match} $\to$ pass). Transaction $T_i$ is marked invalid due to the stale read on $H(k_2)$, despite the validator never seeing $k_2$'s actual value---this is blind validation.
 \end{minipage}
 \vspace{-.3cm}
 \end{table*}
