@@ -1,4 +1,5 @@
 \section{Background on Hyperledger Fabric}
+\label{background}
 Hyperledger Fabric consists of three entities---client,
 peer, and orderer. The transaction flow in Fabric
 involves all three entities and follows \texttt{simulate-order-validate-commit}. 
@@ -98,11 +99,9 @@ such that it can take into account of write-set of previous valid transactions w
 \begin{figure}
     \begin{center}
 			\includegraphics[scale=0.35]{fig/peer.pdf}
-  		\vspace{-.7cm}
 		\caption{Various components in peer involved in simulation, validation, and commit phase.}
 		\label{fig:peer}
  \end{center}
-  \vspace{-.6cm}
 \end{figure}
 % The number of workers used for \textit{policy} and \textit{serializability validator}
 % is equal to the number of vCPUs allocated to the peer and one worker, respectively.
@@ -120,4 +119,5 @@ maintains an index in the form of state to a list of \{\textit{block number},
 \textit{transaction number} within the block\} such that the actual history of each
 state can be retrieved from the \textit{block store} using the transaction's write-set.
 
+The key architectural property for our purposes is the separation of simulation from validation: because simulation runs on a configurable subset of peers and produces versioned read-write sets that are validated independently, the protocol admits extensions to the endorser, validator, and committer without changing the ordering layer. The next section identifies which of these extension points are needed for private data support.
 

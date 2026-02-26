@@ -28,7 +28,7 @@
 % \renewcommand{\baselinestretch}{0.99}
 \usepackage{graphicx}
 \usepackage{wrapfig}
-% \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+\usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
 \usepackage{enumitem}
 \usepackage{hyperref, xcolor}
 \hypersetup{colorlinks, citecolor=blue}
@@ -80,7 +80,7 @@
 
 % ****************** TITLE ****************************************
 
-\title{Enabling Data Privacy in Blockchain\vspace{-.1cm}}
+\title{Enabling Data Privacy in Blockchain}
 % \author[1]{} %\thanks{contributed equally} } 
 % \author[1]{} %\printfnsymbol{1}}
 % \author[1]{} % \printfnsymbol{1}}
@@ -177,20 +177,20 @@
 % number that will appear in the \additionalauthors section.
 %}
 
-\author{Senthilnathan Natarajan}
+\author{Senthilnathan Natarajan, Manish Sethi, Dave Enyeart, Yacov Manevich, Artem Barger}
 \affiliation{\institution{IBM Research}}
 
-\author{Manish Sethi}
-\affiliation{\institution{IBM Research}}
-
-\author{Dave Enyeart}
-\affiliation{\institution{IBM Research}}
-
-\author{Yacov Manevich}
-\affiliation{\institution{IBM Research}}
-
-\author{Artem Barger}
-\affiliation{\institution{IBM Research}}
+% \author{Manish Sethi}
+% \affiliation{\institution{IBM Research}}
+%
+% \author{Dave Enyeart}
+% \affiliation{\institution{IBM Research}}
+%
+% \author{Yacov Manevich}
+% \affiliation{\institution{IBM Research}}
+%
+% \author{Artem Barger}
+% \affiliation{\institution{IBM Research}}
 \thanks{Yacov Manevich is now at Ava Labs. Artem Barger is now at Modelyo.}
 
 
@@ -253,6 +253,7 @@ ISSN 2150-8097. \\
 % The following two commands are all you need in the
 % initial runs of your .tex file to
 % produce the bibliography for the citations in your paper.
+\balance
 \bibliographystyle{abbrv}
 \bibliography{paper}  % vldb_sample.bib is the name of the Bibliography in this case
 % You must have a proper ".bib" file

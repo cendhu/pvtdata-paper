@@ -1,5 +1,4 @@
 Prior to committing a block, each peer identifies missing authorized private data and retrieves it using the prioritized pull strategy in Algorithm~\ref{alg:retrieval}. We target the transaction's endorsers first because they are guaranteed to possess the write-sets, having produced them during simulation. Only if the endorsers are unavailable does the peer fall back to broadcasting across the broader gossip network. Each received write-set is verified against the on-chain hash before being stored, so a Byzantine peer cannot inject forged data through this path.
-
 Should retrieval still fail after retries, the peer commits the block anyway and records the missing entries as eligible missing data; a background reconciliation service periodically retries these entries, ensuring eventual availability without blocking block commit.
 
 \begin{algorithm}[h]
@@ -15,7 +14,8 @@ Should retrieval still fail after retries, the peer commits the block anyway and
 \quad\quad\quad \textbf{if} $tx$ fails endorsement policy \textbf{then skip} \\
 \quad 2. \textbf{for each} collection $c$ referenced in $tx$'s hashed write-set \textbf{do} \\
 \quad\quad\quad \textbf{if} $p \in c.\mathcal{M}$ \textbf{and} $c$'s private write-set $\notin$ transient store \\
-\quad\quad\quad\quad\quad Add digest $(tx.id, c.ns, c.id, B.num, tx.idx)$ to MissingSet \\
+\quad\quad\quad\quad\quad Add digest $(tx.id, c.\mathit{ns}, c.id, B.num, tx.idx)$ to MissingSet \\
+\quad\quad\quad\quad\quad \textit{// $c.\mathit{ns}$: smart contract namespace owning collection $c$} \\
 \quad 3. \textbf{if} MissingSet $= \emptyset$ \textbf{then} proceed to commit \\
 \quad 4. $E \leftarrow$ endorsers of $tx$ \quad\quad\quad \textit{// priority targets} \\
 \quad 5. Send pull request with MissingSet digests to $E$ \\

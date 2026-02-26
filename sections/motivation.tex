@@ -16,5 +16,13 @@ Beyond the coarse question of \textit{whether} data is shared, real deployments 
 \textbf{Field-Level Privacy Within a Single Transaction.}
 Privacy requirements vary even within a single transaction. In a food supply chain, a shipment record contains fields with different visibility needs: lot numbers, timestamps, and product origins must be shared across the network for traceability, while prices, discounts, and invoice details are confidential between the buyer and seller. This private data still needs to be \textit{shared} with the authorized parties---the buyer, the seller, and potentially an auditor---and it must be governed by the same transactional guarantees as the public shipment record. Relegating it to an external database forces organizations to manage a \textit{shadow} coordination layer---replicating data to authorized parties, enforcing access revocation, and maintaining consistency with the on-chain state---all independently of the blockchain, duplicating operational overhead that the blockchain node already subsumes. The alternatives are equally unsatisfying: hiding the entire transaction off-chain sacrifices the audit trail; publishing everything sacrifices business confidentiality; pushing private fields to an external store sacrifices atomicity and adds operational complexity. Integrating privacy into the ledger's native state machine is the only way to guarantee atomicity while eliminating this redundant infrastructure. Fine-grained, field-level privacy \textit{within the blockchain} is what real deployments require.
 
+\begin{figure}
+\centering
+\small
+\resizebox{\columnwidth}{!}{\input{fig/fsc-private-data.tex}}
+\caption{Private data is visible only to authorized parties; on-chain hashes provide proof of existence and traceability.}
+\label{fig:fsc-pvt-data-food-traceability}
+\end{figure}
+
 \textbf{Privacy as a Participation Prerequisite.}
 Beyond regulatory compliance, transparency creates an economic barrier to participation. Consortium members are often competitors, and blockchain's value increases with participation---network effects are central to its appeal---yet transparency gives organizations a rational incentive to withhold private data or avoid joining altogether. The audit guarantee is what makes organizations willing to join despite privacy concerns: each member trusts that on-chain evidence protects the integrity of every transaction, even transactions involving private data they cannot see. Privacy is therefore not merely a compliance requirement; it is a prerequisite for consortium formation, and auditability is the trust mechanism that enables it.

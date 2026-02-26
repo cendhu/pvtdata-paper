@@ -3,11 +3,11 @@
     existing/.style={draw, thick, minimum height=0.8cm,
                      font=\small\bfseries, align=center, inner sep=4pt},
     newblock/.style={draw, thick, minimum height=0.8cm,
-                     fill={rgb,255:red,34;green,120;blue,34}, text=white,
+                     fill={gray!50}, text=black,
                      font=\small\bfseries, align=center, inner sep=4pt},
     db/.style={cylinder, draw, thick, shape border rotate=90, aspect=0.25,
                minimum width=1.8cm, minimum height=1.2cm,
-               fill={rgb,255:red,34;green,120;blue,34}, text=white,
+               fill={gray!50}, text=black,
                font=\small\bfseries, align=center, inner sep=2pt},
     subnote/.style={font=\scriptsize, align=center},
 ]
@@ -26,11 +26,11 @@
 % === ROW 2: GOSSIP (tall), BLOCK QUEUE, TRANSIENT STORE ===
 \node[newblock, minimum width=2.4cm, minimum height=2.6cm]
     (gossip) at (-0.1, -2.5) {};
-\node[font=\small\bfseries, text=white] at (-0.1, -1.6) {Gossip};
-\node[font=\scriptsize, text=white] at (-0.1, -2.1) {Private write-set};
-\node[font=\scriptsize, text=white] at (-0.1, -2.4) {dissemination};
-\node[font=\scriptsize, text=white] at (-0.1, -2.9) {Missing private};
-\node[font=\scriptsize, text=white] at (-0.1, -3.2) {data reconciler};
+\node[font=\small\bfseries, text=black] at (-0.1, -1.6) {Gossip};
+\node[font=\scriptsize, text=black] at (-0.1, -2.1) {Private write-set};
+\node[font=\scriptsize, text=black] at (-0.1, -2.4) {dissemination};
+\node[font=\scriptsize, text=black] at (-0.1, -2.9) {Missing private};
+\node[font=\scriptsize, text=black] at (-0.1, -3.2) {data reconciler};
 
 \node[existing, minimum width=2.0cm, minimum height=0.8cm]
     (blockq) at (2.5, -1.7) {Block Queue};
@@ -73,7 +73,7 @@
 % === LEGEND ===
 \node[existing, minimum width=1.4cm, minimum height=0.35cm, font=\scriptsize\bfseries]
     (leg1) at (2.5, -8.3) {Pre-existing};
-\node[newblock, minimum width=1.4cm, minimum height=0.35cm, font=\scriptsize\bfseries]
+\node[newblock, minimum width=1.4cm, minimum height=0.35cm, font=\scriptsize\bfseries, text=black]
     (leg2) at (5.5, -8.3) {New (PDC)};
 
 \end{tikzpicture}

@@ -3,36 +3,20 @@
 The private data collection mechanism described in \S\ref{s:design} was built directly into Hyperledger Fabric~\cite{hf}, an open-source permissioned blockchain platform, mapping each architectural component to a peer-internal service.
 
 \textit{Fabric Architecture Overview.}
-Fabric's simulate-order-validate-commit paradigm is described in \S\ref{pdc}. Within a peer, the central components are the \textit{endorser} responsible for chaincode simulation, the \textit{gossip} layer for block dissemination, endorsement policy and serializability validators, and a \textit{committer} that persists valid transactions to the \textit{block store}, \textit{state DB}, and \textit{history DB}. Figure~\ref{fig:peer-impl} shows how private data collection components (green) extend the existing architecture (white).
+Fabric's simulate-order-validate-commit paradigm is described in \S\ref{pdc}. Within a peer, the central components are the \textit{endorser} responsible for chaincode simulation, the \textit{gossip} layer for block dissemination, endorsement policy and serializability validators, and a \textit{committer} that persists valid transactions to the \textit{block store}, \textit{state DB}, and \textit{history DB}. Figure~\ref{fig:peer-impl} shows how private data collection components (gray) extend the existing architecture (white). During endorsement, the \textit{endorser} stores private data in the \textit{transient store} and disseminates it to other authorized members via the gossip-based private data dissemination protocol. When the \textit{gossip} layer receives an ordered block, the endorsement policy validator checks the block's transactions; for each valid transaction, the peer fetches the corresponding private data from its local transient store or, if missing, pulls it from other eligible peers. The retrieved private data then moves to the serializability validator and finally to the \textit{committer}, which persists it alongside the block. Any entries still missing after the commit window are fetched asynchronously by a separate \textit{reconciler} within the gossip layer.
 
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{fig/peer-with-private-data-crop.pdf}
-\caption{Peer architecture with private data collection components. Pre-existing components (white) form the core transaction pipeline; new components (green) implement the private data collection mechanism.}
+\caption{Peer architecture with private data collection components. Pre-existing components (white) form the core transaction pipeline; new components (gray) implement the private data collection mechanism.}
 \label{fig:peer-impl}
 \end{figure}
 
-\textit{Storage Architecture.}
-Supporting the dual-layered storage strategy required extending the peer with four logical stores: (i)~a \textit{transient store} for uncommitted write-sets awaiting dissemination and commit; (ii)~a \textit{private data store} maintaining the complete history of committed private data for retrieval and reconciliation; (iii)~an \textit{eligible missing data} tracker for private data the peer is authorized to access but has not yet received; and (iv)~an \textit{ineligible missing data} tracker for collections the peer does not currently belong to, which are reclassified as eligible when collection membership changes.
+\textit{Storage and State Management.}
+The four logical stores described in \S\ref{s:design}---transient store, private data store, eligible missing data tracker, and ineligible missing data tracker---are each backed by a LevelDB instance embedded within the peer process. The partitioned state management scheme (\S\ref{s:design}) is realized by co-locating public, hashed, and private state in the same physical State DB (LevelDB or CouchDB, operator-selectable) and distinguishing them via internal key prefixes; the peer's data management layer enforces namespace isolation so that no smart contract can access another chaincode's hashed or private partitions. The hash function $H$ is configurable per channel via a configuration transaction; Fabric supports SHA-256, SHA-512, and other SHA-family algorithms, with SHA-256 as the default.
 
-\textit{Hash Function.}
-The hash function $H$ applied to private keys and values is configurable per channel via a configuration transaction. Fabric supports SHA-256, SHA-512, and other SHA-family algorithms, with SHA-256 as the default; all satisfy collision-resistance under standard cryptographic assumptions, meeting the precondition of Theorem~1.
+\textit{Dissemination, Membership, and Lifecycle.}
+The proactive dissemination and reactive retrieval protocols (\S\ref{s:gossip}) are realized as new gRPC-based message types within Fabric's gossip component; a configurable retry mechanism with exponential back-off handles transient failures in both paths. Collection policies are stored as part of the chaincode definition in the channel configuration and evaluated at validation time as described in \S\ref{s:design}. Two complementary purging mechanisms implement the data lifecycle management policy (\S\ref{s:design}): a background retention process within the \texttt{PvtDataStore} automatically expires private data based on the block-to-live parameter $\tau$, running in asynchronous batches so as not to impede commit throughput; for application-controlled deletion, the \texttt{PurgePrivateData} API (Table~\ref{table:apis}) commits a purge marker to the ledger, and once committed, the marker prevents the data from appearing in query results or being reconciled from remote peers, providing the ``right to forget'' behavior required by data protection regulations.
 
-\textit{Partitioned State Management.}
-Fabric's existing State DB was extended with namespace-based isolation to realize partitioned state management. A chaincode's public, hashed, and private state all reside in the same physical database but are distinguished by internal key prefixes; the peer's data management layer enforces that no smart contract can read or write another chaincode's hashed or private namespaces.
-
-\textit{Gossip Protocol Extensions.}
-The dissemination and retrieval protocols (\S\ref{s:gossip}) were integrated into Fabric's gossip component through new message types: proactive push during simulation (Algorithm~\ref{alg:dissemination}) and reactive pull during commit (Algorithm~\ref{alg:retrieval}). A configurable retry mechanism handles transient failures in both paths.
-
-\textit{Collection Configuration and Membership.}
-Collection policies are stored as part of the chaincode definition in the channel configuration. Adding a new organization triggers a reclassification of previously ineligible missing-data entries, after which the \texttt{reconciliation} service detects the newly eligible entries and fetches the corresponding historical private data on the peer's behalf.
-
-\textit{Lifecycle and Purging.}
-Two complementary purging mechanisms are supported. A background retention process within the \texttt{PvtDataStore} automatically expires private data based on $\tau$, running in asynchronous batches so as not to impede commit throughput. For application-controlled deletion, the \texttt{PurgePrivateData} API (Table~\ref{table:apis}) commits a purge marker to the ledger; once committed, the marker prevents the data from appearing in query results or being reconciled from remote peers, providing the ``right to forget'' behavior required by data protection regulations.
-
-\textit{Validation and Commit.}
-The validation component was extended to check both chaincode-level and collection-level endorsement policies. Blind validation works by running OCC checks against the hashed namespace in the State DB, so every node can verify serializability without ever seeing the underlying private data.
-
-\smallskip
-\noindent\textit{Implementation Scope.}
-The private data collection feature is written in Go and totals approximately 12,000 lines of production code spread across the peer's endorser, committer, gossip, and state management subsystems. The three largest components are private data storage ($\sim$4,000 lines), gossip-based dissemination and retrieval ($\sim$3,300 lines), and the privacy-enabled state database ($\sim$1,700 lines). An additional $\sim$21,000 lines of unit and integration tests accompany the feature, a 1.6:1 test-to-production ratio that reflects the importance of correctness in a production storage system.
+\textit{Validation and Implementation Scope.}
+The validation component was extended to enforce both chaincode-level and collection-level endorsement policies, and to perform the blind OCC validation described in \S\ref{s:design} against the hashed namespace in the State DB. The private data collection feature comprises approximately 33,000 lines of Go code, including production logic and tests.

@@ -39,7 +39,6 @@ VMs\textsuperscript{$\dagger$} & 14 & 10 & 16 & 12 \\
 \bottomrule
 \end{tabular}
 
-\vspace{2pt}
 {\scriptsize \textsuperscript{$\dagger$}Each VM: 32 vCPUs (2x8-core Xeon), 64\,GB RAM, 12\,TB disk, RHEL 9 / 3 Raft orderers + 1 client per workload. VMs span 4 WAN regions on IBM Research Cloud (E=us-east-1, S=us-south-1, EU=eu-de-1, JP=jp-tok-1); symmetric RTTs (ms): E--S 31, E--EU 85, E--JP 139, S--EU 119, S--JP 170, EU--JP 221. Load is increased until throughput saturates; we report peak tx/s and latency (proposal + broadcast + commit) over 300\,s steady-state runs.}
 \end{table}
 
