@@ -1,6 +1,6 @@
-\section{Private Data Dissemination and Retrieval}
+\section{Data Dissemination and Retrieval}
 \label{s:gossip}
-Since private data is excluded from the consensus-driven block delivery, we utilize a specialized peer-to-peer protocol to ensure data availability and fault tolerance. The protocol operates in two complementary phases: proactive dissemination during simulation, and reactive retrieval during commit.
+Since private data is excluded from the consensus-driven block delivery, we utilize a specialized peer-to-peer protocol to ensure data availability and fault tolerance. We assume a partially synchronous network with potentially malicious clients; the full threat model is presented in \S\ref{s:threat-model}. The protocol operates in two complementary phases: proactive dissemination and reactive retrieval.
 
 \subsection{Proactive Dissemination}
 \label{s:dissemination}
@@ -12,8 +12,8 @@ Since private data is excluded from the consensus-driven block delivery, we util
 
 \subsection{Dynamic Membership and Reconciliation}
 \label{s:dynamic-membership}
-Collection membership may change over the lifetime of a network. When a new member is added to a collection's membership policy $\mathcal{M}$, the peer detects the configuration change during the commit of the block containing the policy update. At this point, all previously recorded \textit{ineligible missing data} for that collection---entries the peer had tracked but was not authorized to fetch---are reclassified as \textit{eligible missing data}. This reclassification automatically triggers the background reconciliation service, which periodically pulls these historical private write-sets from existing collection members using the same hash-based verification as the reactive retrieval protocol, ensuring the new member eventually obtains the complete private data history for the collection.
+Collection membership may change over the lifetime of a network. When a new member is added to a collection's membership policy $\mathcal{M}$, the peer detects the configuration change during the commit of the block containing the policy update. At that moment, all previously recorded \textit{ineligible missing data} for that collection---entries the peer had tracked but was not authorized to fetch---are reclassified as \textit{eligible missing data}. Reclassifying these entries automatically triggers the background reconciliation service, which periodically pulls the corresponding historical private write-sets from existing collection members using the same hash-based verification as the reactive retrieval protocol.
 
-When a member is removed from a collection, the removed peer retains access only to data committed before its removal. The updated membership policy excludes it from both proactive dissemination and reactive retrieval eligibility checks, ensuring that future private data is not shared with the departing organization.
+In this way, a newly admitted peer catches up on all historical private data it is now authorized to access, supporting \textbf{R5} (Dynamic Membership).
 
-
+Membership removal is handled symmetrically. The departing peer retains access to data committed before its removal, but the updated policy excludes it from both proactive dissemination and reactive retrieval eligibility checks, preventing any subsequent private data from reaching that organization.

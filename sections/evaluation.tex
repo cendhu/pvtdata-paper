@@ -1,13 +1,96 @@
 \section{Evaluation}
 
-\textbf{TODO: Evaluation experiments to include:}
+The design in \S\ref{s:design}--\S\ref{s:gossip} introduces several mechanisms---dual-recording, hashed-state blind validation, proactive dissemination, and reactive retrieval---each adding work relative to a standard public-only transaction. Our evaluation seeks to answer the following questions:
 \begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-    \item Throughput comparison: PDC transactions vs.\ standard transactions
-    \item Latency breakdown across the four phases (simulation, ordering, validation, commit)
-    \item Scalability with number of collections, organizations, and private data sizes
-    \item Gossip overhead: network bandwidth for dissemination and retrieval
-    \item Impact of block-to-live (purging) on performance
-    \item Comparison with channel-based isolation (the main alternative)
-    \item Failure/recovery scenarios and their performance impact
-    \item Addition of new members to the collection and sync/fetch duration
+\item \textit{What is the overall cost of privacy?} How does end-to-end throughput and latency of PDC transactions compare to identical workloads that store all data on the public ledger?
+\item \textit{Where does the overhead originate?} During simulation, each \texttt{PutPrivateData} performs dual-recording and the endorser waits for $n_{required}$ dissemination acknowledgments before responding. During validation, every peer performs OCC checks on both public and hashed state. During commit, peers may need to reactively retrieve missing private data. Which phase dominates the overhead?
+\item \textit{How sensitive is performance to the dissemination parameters?} The endorser targets $n_{dissem}$ peers and blocks until $n_{required}$ acknowledge. Aggressive settings reduce reactive retrieval but increase endorsement latency; conservative settings risk commit-time pulls. What is the optimal trade-off?
+\item \textit{How does the system scale with the number of collections and network size?} More collections per transaction mean more dissemination targets, more hashed-state entries, and more endorsement policy checks. Does throughput degrade gracefully?
+\item \textit{How efficiently can new members reconcile historical data?} When an organization joins a collection, the background reconciliation service must retrieve all historical private write-sets. How does reconciliation time grow with collection history, and does it impact steady-state throughput?
+\item \textit{How resilient is the system to adverse conditions?} Peer failures and network partitions may cause dissemination failures, forcing reactive retrieval. How does throughput degrade under increasing failure rates?
 \end{enumerate}
+
+\subsection{Experimental Setup}
+To answer these questions, we design four application workloads from different industry domains, each modeling a realistic multi-party business process on Hyperledger Fabric. The workloads vary along several dimensions---network size, lifecycle complexity, privacy ratio, endorsement strictness, and read-write intensity---to stress different aspects of the PDC mechanism. For each workload, we implement two chaincode variants in Go: a \textit{PDC variant} that stores sensitive fields in private data collections, and an \textit{all-public variant} that stores identical data on the public ledger. Comparing the two isolates the overhead introduced by private data collections. Table~\ref{table:workloads} summarizes the workload characteristics and experimental setup; all workloads and experiment scripts are open-sourced.\footnote{URL redacted for review.}
+
+\textit{Food Supply Chain} models a farm-to-retail product lifecycle across five roles (Farmer, Supplier, Manufacturer, Distributor, Retailer) with 17 bilateral collections for private pricing and invoice data, exercising the largest collection count per organization. \textit{Sealed-Bid Auction} models a sealed-bid process where $\sim$48\% of transactions are private-data-only and the remainder are public-only, stressing dissemination throughput with a strict AND endorsement policy. \textit{Trade Finance} models cross-border trade across six roles with the longest lifecycle (22 steps) and highest write amplification (2 writes per tx), testing PDC scalability under a majority endorsement policy. \textit{Electronic Health Records} models patient care across four roles; it is read-heavy (3 reads per tx) and uses a 2-of-4-roles endorsement policy, stressing PDC read throughput. In addition, we develop \texttt{PDC\_BENCH}, a minimal chaincode that exposes four operations---\texttt{WritePrivateData}, \texttt{ReadPrivateData}, \texttt{WritePublicData}, and \texttt{ReadPublicData}---enabling controlled measurement of individual PDC mechanism overhead against a public-ledger baseline.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Workload characteristics and experimental setup.}
+\label{table:workloads}
+\begin{tabular}{lcccc}
+\toprule
+ & \textbf{Supply} & \textbf{Auction} & \textbf{Trade} & \textbf{EHR} \\
+ & \textbf{Chain} & & \textbf{Finance} & \\
+\midrule
+Domain & Farm-to- & Sealed-bid & Int'l & Patient \\
+ & retail & auction & trade & care \\
+Orgs / Peers & 10 / 10 & 6 / 6 & 12 / 12 & 8 / 8 \\
+PDC collections & 17 & 9 & 21 & 13 \\[3pt]
+Only-PDC tx & --- & 48.1\% & 45.9\% & 0.0\% \\
+Mixed tx & --- & 0.0\% & 0.0\% & 48.6\% \\
+Public-only tx & --- & 51.9\% & 54.1\% & 51.4\% \\[3pt]
+Endorsement & OR & AND & Majority & 2-of-4 \\
+policy & (any 1) & (2/2) & (7/12) & roles \\
+Reads / Writes & 1 / 1 & 2 / 1 & 1 / 2 & 3 / 1 \\[3pt]
+VMs\textsuperscript{$\dagger$} & 14 & 10 & 16 & 12 \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+{\scriptsize \textsuperscript{$\dagger$}Each VM: 32 vCPUs (2x8-core Xeon), 64\,GB RAM, 12\,TB disk, RHEL 9 / 3 Raft orderers + 1 client per workload. VMs span 4 WAN regions on IBM Research Cloud (E=us-east-1, S=us-south-1, EU=eu-de-1, JP=jp-tok-1); symmetric RTTs (ms): E--S 31, E--EU 85, E--JP 139, S--EU 119, S--JP 170, EU--JP 221. Load is increased until throughput saturates; we report peak tx/s and latency (proposal + broadcast + commit) over 300\,s steady-state runs.}
+\end{table}
+
+\subsection{Commit-Path Overhead and Optimizations}
+To provide early insight into the cost of privacy, we ran a microbenchmark using \texttt{PDC\_BENCH} (4 organizations, 4 peers) with all data stored in a single private data collection. Without optimizations, the private data variant achieved only 720 tx/s compared to 1440 tx/s for the public-only variant---a 50\% throughput reduction. Profiling the block commit path revealed four new steps that account for the gap: (1) \texttt{ListMissingPvtData}, invoked by the gossip coordinator to identify, for every (transaction, collection) pair in the block, whether the peer is a member of the collection and, if so, whether the corresponding private data is already available in the transient store or must be fetched from other collection members; (2) committing to the private data store (\texttt{PvtStore}); (3) updating purge entries in \texttt{PurgeDB}; and (4) purging consumed entries from the transient store.
+
+We applied five targeted optimizations. First, the per-collection membership check in \texttt{ListMissingPvtData} performs a full cryptographic policy evaluation (certificate deserialization, MSP validation, and signature-policy evaluation) for every (transaction, collection) pair, yet this is unnecessary: since collection membership is determined solely by organization identifiers, the crypto check is replaced with a simple string comparison of the peer's MSP ID against the member org list. Second, many commit-path operations are independent and can be parallelized: committing to the block store and \texttt{PvtStore} can proceed concurrently, and updating \texttt{PurgeDB} and the state DB can run in parallel. Third, transient store purging is deferred to a background goroutine. Fourth, a cache is introduced for the transient store. Each optimization is crash-safe: if the peer fails mid-commit, it recovers by comparing the block store and private data store heights and rolling back. After applying all five optimizations incrementally, throughput recovered from 720 to 1344 tx/s---reducing the overhead from 50\% to only 6\% relative to public-only transactions. Table~\ref{table:optimizations} summarizes the incremental gains from each step.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Incremental effect of commit-path optimizations.}
+\label{table:optimizations}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Optimization} & \textbf{tx/s} & \textbf{Gain} \\
+\midrule
+No optimizations (PDC baseline) & 720 & --- \\
++ O(1) membership check & 880 & +22\% \\
++ Background transient-store purge & 1040 & +44\% \\
++ Parallel blk store \& pvt store & 1152 & +60\% \\
++ Parallel purge DB \& state DB & 1248 & +73\% \\
++ Transient-store cache & 1344 & +87\% \\
+\midrule
+Public data only (reference) & 1440 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{End-to-End Performance}
+To answer EQ1, we compare the PDC and all-public variants of all four workloads at peak throughput. Figure~\ref{fig:e2e-throughput} visualizes throughput and latency side by side.
+
+For three of the four workloads, the PDC variant incurs a moderate throughput overhead relative to the all-public baseline: 3\% for Auction (1,025 vs.\ 1,059 tx/s), 7.5\% for Supply Chain (1,468 vs.\ 1,587 tx/s), and 14\% for EHR (1,021 vs.\ 1,194 tx/s). The overhead correlates with per-transaction complexity: EHR is the most read-heavy workload (3 reads per tx), and each read of private data requires an additional transient-store or private-data-store lookup, amplifying the PDC cost. Auction and Supply Chain, with simpler read-write profiles, see smaller overheads.
+
+Trade Finance is a notable outlier: the PDC variant is 18\% \textit{faster} than the all-public baseline (1,200 vs.\ 1,018 tx/s). This workload requires 7 endorsements per transaction from a majority (7-of-12) policy, producing the highest endorsement latency across all workloads ($\sim$3.5\,s). In this regime, the orderer and committer are lightly loaded, so the additional dissemination and hashed-state work fits within the slack created by the long endorsement phase. Meanwhile, PDC transactions write a hash to the public ledger rather than the full payload, reducing the block size and orderer bandwidth, which slightly improves ordering throughput.
+
+Latency follows a similar pattern: the first three workloads see 3--14\% higher latency under PDC, while Trade Finance latency is comparable (3,557 vs.\ 3,691\,ms), confirming that the endorsement phase---not the PDC mechanism---dominates end-to-end latency when the endorsement policy is strict.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{e2e_throughput_latency.pdf}
+\caption{End-to-end throughput (bars, left axis) and latency (lines, right axis) for PDC and all-public variants across four application workloads.}
+\label{fig:e2e-throughput}
+\end{figure}
+
+\subsection{Sensitivity and Scalability}
+\textit{Dissemination Parameter Sensitivity} (EQ3).
+
+\textit{Scalability with Collections and Network Size} (EQ4).
+
+\subsection{Dynamic Membership and Fault Tolerance}
+\textit{Dynamic Membership and Reconciliation} (EQ5).
+
+\textit{Fault Tolerance under Adverse Conditions} (EQ6).

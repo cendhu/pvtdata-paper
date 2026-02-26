@@ -1,4 +1,8 @@
-During the simulation phase, each endorsing node stores the generated private write-sets in its local transient store and proactively pushes them to a subset of authorized remote peers via a peer-to-peer protocol. For each collection involved in the transaction, the endorser sends the entire collection's private write-set as a single message to eligible peers. The set of target peers is determined by evaluating the collection's membership policy $\mathcal{M}$ against the current view of active peers in the network. The number of peers targeted is governed by $n_{dissem}$, and the endorser waits until at least $n_{required}$ peers acknowledge receipt before returning the signed endorsement response to the client. This eager strategy ensures that the private data is already present on most authorized nodes by the time the corresponding block is received, minimizing the need for reactive pulling during the commit phase. If the endorser cannot obtain $n_{required}$ acknowledgments before the timeout, it returns a dissemination failure to the client; the client may then retry with a different set of endorsers or abort the transaction. The endorser itself does not re-attempt dissemination, as the client is responsible for orchestrating retries---this keeps the endorser stateless with respect to dissemination attempts. Algorithm~\ref{alg:dissemination} summarizes the protocol.
+As described in Algorithm~\ref{alg:dissemination}, after simulation the endorsing peer immediately pushes each private write-set to a subset of authorized collection members. Crucially, the endorser does \textit{not} return its signed response to the client until at least $n_{required}$ peers have acknowledged receipt. Blocking on these acknowledgments guarantees that the data exists on multiple peers before the client can submit the transaction for ordering. After sending the endorsement response, a background gossip task continues pushing the write-set to the remaining peers up to $n_{dissem}$ total, spreading coverage without adding to client-observed latency.
+
+We separate $n_{required}$ from $n_{dissem}$ so that operators can tune the two concerns independently. Setting $n_{dissem}$ aggressively ensures most collection members receive the data proactively, which minimizes commit-time reactive pulls; keeping $n_{required}$ small protects endorsement latency.
+
+When the endorser cannot obtain $n_{required}$ acknowledgments before the timeout, it returns a failure to the client, who may retry with different endorsers. We deliberately do not retry dissemination at the endorser: keeping the endorsement critical path simple avoids unbounded retry delays and pushes fault handling to the client, where it belongs.
 
 \begin{algorithm}[h]
 \centering
@@ -12,13 +16,17 @@ During the simulation phase, each endorsing node stores the generated private wr
 \quad 1. Store all private write-sets for $tx$ in local transient store \\
 \quad 2. \textbf{for each} collection $c$ in $tx$'s private write-sets \textbf{do} \\
 \quad\quad\quad $W_c \leftarrow$ collection $c$'s private write-set \\
-\quad\quad\quad $P \leftarrow \text{SelectAuthorizedPeers}(c.\mathcal{M}, c.n_{dissem})$ \\
-\quad\quad\quad \textbf{for each} peer $p_i \in P$ \textbf{do} \\
-\quad\quad\quad\quad\quad Push $(tx.id, c.id, W_c)$ to $p_i$ via gossip \\
-\quad\quad\quad Wait until $|\{p_i : \text{ACK received}\}| \geq c.n_{required}$ \\
-\quad\quad\quad\quad\quad or timeout expires \\
-\quad\quad\quad \textbf{if} timeout \textbf{then} return dissemination failure \\
-\quad 3. Return signed endorsement response to client \\[3pt]
+\quad\quad\quad \textit{// Blocking phase: wait for $n_{required}$ ACKs before responding} \\
+\quad\quad\quad $P_{req} \leftarrow \text{SelectAuthorizedPeers}(c.\mathcal{M}, c.n_{required})$ \\
+\quad\quad\quad Push $(tx.id, c.id, W_c)$ to all $p_i \in P_{req}$ \\
+\quad\quad\quad Wait until $|\{\text{org}(p_i) : p_i \text{ ACKed}\}| \geq c.n_{required}$, or timeout \\
+\quad\quad\quad \textbf{if} timeout \textbf{then} return dissemination failure to client \\
+\quad 3. Return signed endorsement response to client \\
+\quad 4. \textbf{for each} collection $c$ in $tx$'s private write-sets \textbf{do} \\
+\quad\quad\quad \textit{// Background phase: spread to remaining peers up to $n_{dissem}$} \\
+\quad\quad\quad $P_{dissem} \leftarrow \text{SelectAuthorizedPeers}(c.\mathcal{M}, c.n_{dissem})$ \\
+\quad\quad\quad\quad\quad $\setminus\ P_{req}$ \\
+\quad\quad\quad Push $(tx.id, c.id, W_c)$ to all $p_i \in P_{dissem}$ (non-blocking) \\[3pt]
 \textbf{At Receiving Peer} $p_i$: \\
 \quad 1. Verify sender $e$ is authorized for collection $c$ \\
 \quad 2. Verify ledger height of $tx$ is within acceptable range \\
@@ -26,6 +34,6 @@ During the simulation phase, each endorsing node stores the generated private wr
 \quad 4. Send ACK to endorser $e$ \\
 \hline
 \end{tabular}
-\caption{Proactive dissemination protocol executed during the simulation phase. The endorser pushes each collection's full private write-set to authorized peers before returning the endorsement.}
+\caption{Proactive dissemination protocol.}
 \label{alg:dissemination}
 \end{algorithm}

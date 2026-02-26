@@ -1,8 +1,6 @@
-Prior to the commit of a block, each peer analyzes the transactions and determines if it is missing authorized private data. For each valid transaction, the peer checks every collection referenced in the hashed write-set: if the peer's organization is a member of the collection and the corresponding private write-set is not already present in the local transient store, the collection is marked as missing.
+Prior to committing a block, each peer identifies missing authorized private data and retrieves it using the prioritized pull strategy in Algorithm~\ref{alg:retrieval}. We target the transaction's endorsers first because they are guaranteed to possess the write-sets, having produced them during simulation. Only if the endorsers are unavailable does the peer fall back to broadcasting across the broader gossip network. Each received write-set is verified against the on-chain hash before being stored, so a Byzantine peer cannot inject forged data through this path.
 
-The retrieval process, described in Algorithm~\ref{alg:retrieval}, employs a prioritized pull strategy. When a peer identifies missing data, it constructs a digest for each missing entry---identified by the tuple (transaction ID, namespace, collection, block number, transaction index)---and first attempts to fetch the full collection-level private write-set from the peers that endorsed the transaction, as they are guaranteed to have possessed the data during simulation. If those nodes are unreachable, the requester broadcasts requests to other authorized collection members via the gossip network. Upon receiving a response containing the private write-set, the requester validates it by hashing the data and comparing the result to the hash recorded in the block, ensuring data integrity even when fetching from potentially untrusted neighbors. Retrieval attempts use a fixed-interval retry bounded by a configurable time threshold to avoid overwhelming the network during periods of high congestion. If retrieval still fails after the retry threshold, the peer records the entries as \\textit{eligible missing data} and proceeds with the block commit; a background reconciliation service periodically retries fetching these entries using the same protocol, ensuring eventual data availability without blocking the commit pipeline.
-
-Note that if a smart contract attempts to read private data that is missing from the peer's local store (e.g., due to incomplete dissemination or reconciliation), the \\texttt{GetPrivateData} API returns an error, causing the simulation to fail. This fail-fast behavior prevents the endorser from producing a read-write set based on incomplete state, ensuring that only fully informed simulations contribute to transaction endorsements.
+Should retrieval still fail after retries, the peer commits the block anyway and records the missing entries as eligible missing data; a background reconciliation service periodically retries these entries, ensuring eventual availability without blocking block commit.
 
 \begin{algorithm}[h]
 \centering
@@ -22,15 +20,12 @@ Note that if a smart contract attempts to read private data that is missing from
 \quad 4. $E \leftarrow$ endorsers of $tx$ \quad\quad\quad \textit{// priority targets} \\
 \quad 5. Send pull request with MissingSet digests to $E$ \\
 \quad 6. \textbf{for each} private write-set $W_c$ received \textbf{do} \\
-\quad\quad\quad Verify $H(W_c)$ matches on-chain hash \\
-\quad\quad\quad \textbf{if} valid \textbf{then} store $W_c$ in transient store \\
+\quad\quad\quad Verify $H(W_c)$ matches on-chain hash; if valid, store $W_c$ \\
 \quad 7. \textbf{if} MissingSet $\neq \emptyset$ \textbf{then} \\
-\quad\quad\quad Broadcast pull request to gossip network \\
-\quad\quad\quad Retry with fixed-interval sleep \\
-\quad 8. Proceed to commit (missing data tracked \\
-\quad\quad\quad for background reconciliation) \\
+\quad\quad\quad Broadcast to gossip network; retry with fixed-interval sleep \\
+\quad 8. Proceed to commit (missing data tracked for reconciliation) \\
 \hline
 \end{tabular}
-\caption{Reactive retrieval protocol executed before the commit phase. Missing private write-sets are identified per collection; endorsers are prioritized as data sources with gossip as a fallback.}
+\caption{Reactive retrieval protocol.}
 \label{alg:retrieval}
 \end{algorithm}
