@@ -1,0 +1,7 @@
+# Pull-dominant strategy: vary n_dissem (m), n_required=0
+# m  Throughput  PropLatency  CommitLatency  DiskWrites_GB  CPU_s  NetworkTX_GB
+0    198   73    151.6   2.4    4484   6.4
+4    229   287   132.7   8.9    6747   7.8
+9    211   416   131.8   19.6   9364   9.4
+14   239   586   130.7   34.9   12429  11.7
+19   715   852   38.4    43.8   22057  25.3

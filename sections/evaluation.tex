@@ -1,14 +1,15 @@
 \section{Evaluation}
 
-The mechanisms introduced in \S\ref{s:design}--\S\ref{s:gossip}---dual-recording, blind validation, and gossip dissemination---add overhead relative to standard public transactions. We evaluate this cost by answering: (1) What is the baseline end-to-end overhead of privacy? (2) How sensitive is performance to dissemination parameters ($n_{dissem}$, $n_{required}$)? (3) How does the system scale with collection count and network size? and (4) How resilient is the system to churn and network faults?
+We evaluate four questions: (1)~what is the end-to-end overhead of private data relative to all-public transactions? (2)~how sensitive is performance to dissemination parameters? (3)~how far does the system scale with collection count and network size? and (4)~how resilient is the system to membership changes and faults?
 
 \noindent\textbf{Experimental Setup.}
-We design four application workloads modeling multi-party business processes to stress different dimensions of the PDC mechanism (Table~\ref{table:workloads}). Supply Chain maximizes the collection count per organization; Auction isolates dissemination throughput; Trade Finance stresses scalability under strict majority endorsement; and EHR tests read throughput. For each, we compare a \textit{PDC variant} against an \textit{all-public variant} to isolate privacy overhead. In addition, we develop \texttt{PDC\_BENCH}, a minimal chaincode that exposes four operations---\texttt{WritePrivateData}, \texttt{ReadPrivateData}, \texttt{WritePublicData}, and \texttt{ReadPublicData}---enabling controlled measurement of individual PDC mechanism overhead against a public-ledger baseline.
+We design four application workloads modeling multi-party business processes to stress different dimensions of the PDC mechanism (Table~\ref{table:workloads}). Supply Chain maximizes the collection count per organization; Auction isolates dissemination throughput; Trade Finance stresses scalability under strict majority endorsement; and EHR tests read throughput. For each, we compare a \textit{PDC variant} against an \textit{all-public variant} to isolate privacy overhead. In addition, we develop \texttt{PDC\_BENCH}, a minimal chaincode for controlled micro-benchmarking that exercises all public and private data APIs, enabling direct measurement of individual PDC operations against a public-ledger baseline.
 
 \begin{table}[t]
 \centering
 \small
 \caption{Workload characteristics and experimental setup.}
+  \vspace{-0.2cm}
 \label{table:workloads}
 \setlength{\tabcolsep}{0pt}
 \renewcommand{\arraystretch}{0.85}
@@ -20,84 +21,79 @@ We design four application workloads modeling multi-party business processes to 
 Domain & Farm-to- & Sealed-bid & Int'l & Patient \\
  & retail & auction & trade & care \\
 Orgs / Peers & 10 / 10 & 6 / 6 & 12 / 12 & 8 / 8 \\
-PDC collections & 17 & 9 & 21 & 13 \\[2pt]
+PDC collections & 17 & 9 & 21 & 13 \\
+\midrule
 Only-PDC tx & --- & 48.1\% & 45.9\% & 0.0\% \\
 Mixed tx & --- & 0.0\% & 0.0\% & 48.6\% \\
-Public-only tx & --- & 51.9\% & 54.1\% & 51.4\% \\[2pt]
+Public-only tx & --- & 51.9\% & 54.1\% & 51.4\% \\
+\midrule
 Endorsement & OR & AND & Majority & 2-of-4 \\
 policy & (any 1) & (2/2) & (7/12) & roles \\
-Reads / Writes & 1 / 1 & 2 / 1 & 1 / 2 & 3 / 1 \\[2pt]
+Reads / Writes & 1 / 1 & 2 / 1 & 1 / 2 & 3 / 1 \\
+\midrule
 VMs\textsuperscript{$\dagger$} & 14 & 10 & 16 & 12 \\
 \bottomrule
 \end{tabular*}
 {\scriptsize \textsuperscript{$\dagger$}Each VM: 32 vCPUs (2x8-core Xeon), 64\,GB RAM, 12\,TB disk, RHEL 9 /  Raft orderers. VMs span 4 WAN regions (US-E, US-S, EU, JP). Load is increased until saturation; we report peak tx/s and latency over 300\,s.}
 \end{table}
 
-\noindent\textbf{Commit-Path Overhead and Optimizations.}
-Initial microbenchmarks of the commit path using \texttt{PDC\_BENCH} (4 organizations, 4 peers) revealed a 50\% throughput penalty for PDCs (720 vs 1440 tx/s). Profiling showed the gap was dominated by cryptographic membership checks and serial disk I/O. We applied a series of crash-safe optimizations (Table~\ref{table:optimizations}): replacing cryptographic checks with O(1) identifier comparisons, parallelizing block and private data stores, deferring purges to background routines, and adding a transient-store cache. Together, these reduced commit-path overhead to just 6\% relative to public-only transactions.
-
-\begin{table}[h]
-\centering
-\small
-\caption{Commit-path optimizations impact.}
-\label{table:optimizations}
-\setlength{\tabcolsep}{0pt}
-\renewcommand{\arraystretch}{0.85}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}} lcc}
-\toprule
-\textbf{Optimization Step} & \textbf{tx/s} & \textbf{Gain} \\
-\midrule
-PDC baseline (No optimizations) & 720 & --- \\
-+ O(1) membership identifier check & 880 & +22\% \\
-+ Background transient-store purge & 1040 & +44\% \\
-+ Parallel block and private data stores & 1152 & +60\% \\
-+ Parallel purge DB and state DB & 1248 & +73\% \\
-+ Transient-store cache & 1344 & +87\% \\
-\midrule
-Public data only (Reference baseline) & 1440 & --- \\
-\bottomrule
-\end{tabular*}
-\end{table}
-
 \subsection{End-to-End Performance}
-To answer EQ1, we compare the PDC and all-public variants of all four workloads at peak throughput. In each PDC variant, roughly 40--50\% of transactions touch private data collections. Figure~\ref{fig:e2e-throughput} visualizes throughput and commit latency side by side.
-Across all four workloads, introducing PDCs consistently reduces peak throughput: 3\% for Auction, 7.5\% for Supply Chain, 10\% for Trade Finance, and 14\% for EHR (Figure~\ref{fig:e2e-throughput}). The overhead correlates with per-transaction complexity: EHR is the most read-heavy workload (3 reads per tx), and each private-data read requires an additional transient-store or private-data-store lookup, amplifying the cost. Trade Finance suffers from its strict 7-of-12 endorsement policy, which produces the highest baseline endorsement latency; the additional dissemination and commit-path work compounds an already long critical path. Auction and Supply Chain, with simpler read-write profiles and lighter endorsement policies, see the smallest overheads.
-Commit latency increases uniformly by 4--17\% for the first three workloads, but jumps by 40\% for Trade Finance. Trade Finance's outsized latency increase reflects the interaction between its heavy endorsement phase and the PDC commit path---the committer must verify private-data hashes and potentially trigger reactive retrieval on top of an already slow endorsement round.
+We compare the PDC and all-public variants of all four workloads at peak throughput, with roughly 40--50\% of transactions touching private data collections in each PDC variant. Figure~\ref{fig:e2e-throughput} shows throughput and commit latency side by side.
+Across all four workloads, PDCs consistently reduce peak throughput: 3\% for Auction, 7.5\% for Supply Chain, 10\% for Trade Finance, and 14\% for EHR. The overhead correlates with per-transaction complexity.
+EHR sees the largest drop because it is the most read-heavy workload (3 reads per tx) and each private-data read adds a private-data-store lookup. Trade Finance suffers from its strict 7-of-12 endorsement policy: the additional dissemination and commit-path work compounds an already long critical path. Auction and Supply Chain, with simpler profiles and lighter endorsement policies, see the smallest overheads.
+Commit latency increases by 4--17\% for the first three workloads but jumps 40\% for Trade Finance, where the committer must verify private-data hashes and potentially trigger reactive retrieval on top of an already slow endorsement round.
 
-\textit{Where does the overhead originate?} (EQ2). To decompose the cost, we collected per-node Prometheus metrics and disk I/O counters during each 300\,s run. Three sources account for the gap. First, per-transaction CPU cost rises by 10--20\% due to hash computation and verification, transient-store writes, and private-data-store flushes---none of which exist in the all-public path. Second, because the ordering service never sees private payloads, they must be distributed point-to-point via the gossip protocol, increasing per-transaction network traffic by 10--15\%; missed payloads trigger reactive retrieval that further inflates peer-to-peer traffic. Third, disk reads increase 2--4$\times$ as committers query the transient store and private-data store to match payloads against on-chain hashes. Conversely, total disk writes \textit{decrease}: in the all-public path every peer writes the full payload, whereas with PDCs the public ledger records only a hash and only authorized peers persist the private payload---a storage efficiency benefit of selective replication.
+\textit{Where does the overhead originate?} Per-node Prometheus metrics and disk I/O counters collected during each 300\,s run point to three sources.
+(1)~\textit{CPU:} per-transaction cost rises 10--20\% due to hash computation, transient-store writes, and private-data-store flushes---none of which exist in the all-public path.
+(2)~\textit{Network:} because the ordering service never sees private payloads, they must be distributed point-to-point via gossip, increasing per-transaction traffic by 10--15\%; missed payloads trigger reactive retrieval that further inflates peer-to-peer traffic.
+(3)~\textit{Disk reads:} committers query the transient store and private-data store to match payloads against on-chain hashes, increasing read I/O by 2--4$\times$.
+Notably, total disk \textit{writes} decrease: in the all-public path every peer writes the full payload, whereas with PDCs the ledger records only a hash and only authorized peers persist the private payload---a storage benefit of selective replication.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{e2e_throughput_latency.pdf}
-\caption{End-to-end throughput (bars, left axis) and commit latency (lines, right axis) for PDC and all-public variants across four application workloads.}
-\label{fig:e2e-throughput}
-\end{figure}
+\includegraphics[width=\textwidth]{dissemination_sensitivity.pdf}
+\vspace{-0.5cm}
+\caption{Dissemination parameter sensitivity on a 20-organization WAN network. Top row: throughput (bars) and commit latency (lines). Bottom row: proposal latency (bars) and cumulative disk writes (lines; low values indicate deferred reconciliation). Left: pull-dominant strategy varying $n_{dissem}$. Right: push-with-quorum strategy varying $n_{required}$.}
+\label{fig:dissemination}
+\end{figure*}
 
-\subsection{Sensitivity and Scalability}
-\textit{Dissemination Parameter Sensitivity} (EQ3).
-To isolate the effect of the dissemination parameters introduced in Algorithm~\ref{alg:dissemination}, we deploy a 20-organization network (one peer per organization) across four WAN regions (US East, EU Germany, Japan, US South; five peers per region), with three Raft orderers co-located in US East and three client machines generating load. All peers share a single private data collection spanning all 20 organizations under an OR membership policy. The workload consists entirely of private-data write transactions (100-byte values), each requiring a single endorsement, running at a target load of 600\,tx/s for 300\,s.
+\subsection{Scalability}
+To stress-test the per-collection overhead, we deploy a 10-organization WAN network and scale the number of private data collections attached to a single chaincode from 10 to 300 in increments of 50 (configurations c10--c300). The workload uses \texttt{PDC\_BENCH}: each transaction writes to a single randomly selected collection; all other parameters (block size, endorsement policy, value size) remain fixed. Figure~\ref{fig:scalability} plots throughput (bars) and per-block validation cost (line) as the collection count grows.
+The system sustains peak throughput (740--760\,tx/s) up to 250 collections. Starting at c150, average transaction latency begins to stretch; at c300, throughput drops by 11\% (to 660\,tx/s) while average latency spikes to 24\,s. Disk I/O, ledger commit time, and state DB metrics remain flat throughout the range, confirming that the storage layer is \emph{not} the bottleneck. Instead, the dominant cost is CPU time spent in the validation phase: per-block validation cost rises linearly from 0.20\,s at c10 to 0.59\,s at c300 (Figure~\ref{fig:scalability}).
 
+This degradation is \emph{not} an architectural limit but an implementation artifact. The root cause is a serialization shortcut: all collection definitions are stored in a single \texttt{CollectionConfigPackage} protobuf per chaincode, and the validator performs a full \texttt{proto.Unmarshal} of this package for every transaction that touches any collection---even though each transaction touches only one. At 300 collections, this deserialization runs hundreds of times per second, exhausting CPU headroom. Caching the parsed package or indexing individual collection policies would eliminate the linear penalty without architectural changes. Real-world deployments today rarely exceed a few dozen collections per chaincode, well within the flat-throughput region.
+
+\subsection{Dissemination Sensitivity}
+To isolate the effect of the dissemination parameters introduced in Algorithm~\ref{alg:dissemination}, we deploy a 20-organization WAN network (Table~\ref{table:workloads}) where all peers share a single private data collection.
+The workload consists entirely of private-data write transactions, each requiring a single endorsement, running at 600\,tx/s for 300\,s.
 We study two dissemination strategy families by varying the collection configuration parameters $n_{dissem}$ and $n_{required}$:
 \begin{itemize}[topsep=0pt,noitemsep,leftmargin=15pt]
 \item \textit{Pull-dominant:} The endorsing peer proactively pushes to $n_{dissem} \in \{0, 4, 9, 14, 19\}$ peers before ordering; the remaining $20 - n_{dissem}$ peers retrieve private data reactively at commit time ($n_{required} = 0$, so endorsement latency is unaffected by dissemination).
 \item \textit{Push-with-quorum:} The endorsing peer pushes to all 20 peers ($n_{dissem} = 20$) but blocks the endorsement response until $n_{required} \in \{0, 4, 9, 14, 19\}$ peers acknowledge receipt.
 \end{itemize}
 
-Figure~\ref{fig:dissemination} shows performance under pull-dominant vs. push-with-quorum strategies. Relying on commit-time pulls (panels a, c) creates catastrophic bottlenecks: if $n_{dissem}$ is too low, simultaneous pull requests trigger timeouts, collapsing throughput and causing data loss. Conversely, blocking endorsements on WAN acknowledgments (panels b, d) preserves data but creates backpressure that throttles throughput (dropping 81\% at $n_{required}=19$). We conclude that asynchronous push ($n_{dissem}=N-1, n_{required}=0$) is the optimal WAN configuration: it guarantees retention, maximizes throughput, and eliminates commit-time pull storms.
+Figure~\ref{fig:dissemination} shows performance under the two strategies. Under pull-dominant dissemination, throughput degrades as $n_{dissem}$ decreases (Figure~\ref{fig:dissemination}(a)): with $n_{dissem}=0$, only the endorsing peer holds the private data at commit time, so all 19 remaining peers issue pull requests. Because pulls target random peers, most miss the single data holder and time out. Transactions still commit---peers record the missing data for background reconciliation---but the low cumulative disk writes in Figure~\ref{fig:dissemination}(b) confirm that most peers have not yet persisted the private data within the measurement window.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{dissemination_sensitivity.pdf}
-\caption{Dissemination parameter sensitivity on a 20-organization WAN network. Top row: throughput (bars) and commit latency (lines). Bottom row: proposal latency (bars) and cumulative disk writes (lines; low values indicate data loss). Left: pull-dominant strategy varying $n_{dissem}$. Right: push-with-quorum strategy varying $n_{required}$.}
-\label{fig:dissemination}
-\end{figure*}
-
-\textit{Scalability with Collections and Network Size} (EQ4).
-To understand how the system scales when both network size and collection count grow simultaneously, we increase the number of organizations from 4 to 20 (in increments of 4) and define a bilateral private data collection for every pair of organizations, yielding $\binom{n}{2}$ collections: 6, 28, 66, 120, and 190 collections for $n = 4, 8, 12, 16, 20$ respectively. Each collection spans exactly two organizations with $n_{required} = 2$, so the endorsing peer blocks until both members acknowledge receipt during proactive dissemination. The workload uses \texttt{PDC\_BENCH} with each transaction writing to a single randomly selected bilateral collection; all other parameters (block size, endorsement policy, value size) remain fixed. We use the same geo-distributed testbed as the dissemination experiment, adding peers to regions in round-robin order as the network grows.
-
-This design exercises multiple scaling axes concurrently: the quadratic growth in collection definitions stresses the membership evaluation and endorsement policy checks during validation; the increasing number of peers amplifies block delivery fan-out and gossip protocol overhead; and the growing private state footprint (one hashed-state namespace per collection) tests state DB scalability. Because each bilateral collection has only two members and $n_{required} = 2$, per-collection dissemination cost remains constant---isolating the system-level overhead of managing a large collection topology from the per-collection dissemination cost already characterized in EQ3.
+Under push-with-quorum, all private data reaches every peer (disk writes remain uniformly high in Figure~\ref{fig:dissemination}(d)), but requiring WAN acknowledgments before returning the endorsement response creates backpressure. Figure~\ref{fig:dissemination}(c) shows throughput dropping 81\% at $n_{required}=19$ as the endorser waits for the slowest cross-region peer. Proposal latency rises correspondingly (Figure~\ref{fig:dissemination}(d)), confirming that the bottleneck shifts from commit-time retrieval to endorsement-time blocking.
+We conclude that asynchronous push ($n_{dissem}=N{-}1, n_{required}=0$) is the optimal WAN configuration: it ensures all peers receive private data before commit time (full disk writes across all peers), maximizes throughput, and eliminates commit-time pull storms and deferred reconciliation.
 
 \subsection{Dynamic Membership and Fault Tolerance}
-\textit{Dynamic Membership and Reconciliation} (EQ5).
+We design a two-phase experiment on a five-organization Fabric network (one peer per org). In Phase~1, four organizations share a private data collection and populate it with 50,000 key-value pairs. In Phase~2, the collection policy is expanded to a fifth organization via a chaincode upgrade; the new peer comes online and reconciles the 50,000 historical records it is now entitled to while an additional 50,000 transactions execute concurrently.
 
-\textit{Fault Tolerance under Adverse Conditions} (EQ6).
+We run this scenario under two conditions: (i)~a \textit{baseline} with no faults, and (ii)~a \textit{stress} configuration that injects compound failures during reconciliation---killing the newly joined peer mid-reconciliation and crashing an existing data-holder peer---each followed by recovery after a delay. Correctness is verified by fetching all 100,000 key-value pairs from every peer after stabilization.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{plots/combined_plot.pdf}
+\vspace{-0.5cm}
+\caption{Dynamic membership and fault tolerance. (a)~Baseline: the 5th peer joins between phases and reconciles 50k historical records concurrently with no throughput degradation. (b)~Stress: compound peer failures (\texttt{-org}) and recoveries (\texttt{+org}) cause transient throughput dips but the network self-heals; reconciliation completes despite failures.}
+\label{fig:dynamic-membership}
+\end{figure}
+
+\textit{Baseline Performance Isolation.}
+As shown in Figure~\ref{fig:dynamic-membership}(a), throughput rises from 396\,tx/s to 474\,tx/s when the fifth organization joins, reflecting the added endorsement capacity. The reconciliation curve shows that the background synchronization of 50,000 historical records progresses smoothly alongside active transaction processing, completing at $t \approx 229$\,s without visible throughput degradation. This confirms that reconciliation is effectively isolated from the transaction execution pipeline.
+
+\textit{Resilience Under Compound Failures.}
+Figure~\ref{fig:dynamic-membership}(b) shows behavior under adversarial conditions. When the synchronizing peer is crashed (\texttt{-org5}), reconciliation halts immediately (plateau in the green curve) but resumes from its last synchronized block upon recovery (\texttt{+org5}).
+
+When an existing data-holder peer is crashed (\texttt{-org2}), throughput drops from the 5-peer peak of ${\sim}500$\,tx/s to the 4-peer baseline of ${\sim}400$\,tx/s as the client load redistributes among remaining endorsers. Despite the newly joined peer being offline for 30 seconds and the loss of multiple endorsement sources, reconciliation reaches 100\% data consistency at $t \approx 259$\,s. The gossip-based pull mechanism is self-healing and robust to compound failures during synchronization.

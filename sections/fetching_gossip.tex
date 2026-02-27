@@ -1,5 +1,5 @@
 Prior to committing a block, each peer identifies missing authorized private data and retrieves it using the prioritized pull strategy in Algorithm~\ref{alg:retrieval}. We target the transaction's endorsers first because they are guaranteed to possess the write-sets, having produced them during simulation. Only if the endorsers are unavailable does the peer fall back to broadcasting across the broader gossip network. Each received write-set is verified against the on-chain hash before being stored, so a Byzantine peer cannot inject forged data through this path.
-Should retrieval still fail after retries, the peer commits the block anyway and records the missing entries as eligible missing data; a background reconciliation service periodically retries these entries, ensuring eventual availability without blocking block commit.
+Should retrieval still fail after retries, the peer commits the block anyway and records the missing entries as eligible missing data; a background reconciliation service periodically retries these entries, ensuring eventual availability without blocking block commit. Until reconciliation completes, any \texttt{GetPrivateData} call for a missing key returns an error, signaling to the smart contract that the data is not yet locally available.
 
 \begin{algorithm}[h]
 \centering

@@ -1,9 +1,6 @@
 \section{Implementation}
 
-The private data collection mechanism described in \S\ref{s:design} was built directly into Hyperledger Fabric~\cite{hf}, an open-source permissioned blockchain platform, mapping each architectural component to a peer-internal service.
-
-\textit{Fabric Architecture Overview.}
-Fabric's simulate-order-validate-commit paradigm is described in \S\ref{pdc}. Within a peer, the central components are the \textit{endorser} responsible for chaincode simulation, the \textit{gossip} layer for block dissemination, endorsement policy and serializability validators, and a \textit{committer} that persists valid transactions to the \textit{block store}, \textit{state DB}, and \textit{history DB}. Figure~\ref{fig:peer-impl} shows how private data collection components (gray) extend the existing architecture (white). During endorsement, the \textit{endorser} stores private data in the \textit{transient store} and disseminates it to other authorized members via the gossip-based private data dissemination protocol. When the \textit{gossip} layer receives an ordered block, the endorsement policy validator checks the block's transactions; for each valid transaction, the peer fetches the corresponding private data from its local transient store or, if missing, pulls it from other eligible peers. The retrieved private data then moves to the serializability validator and finally to the \textit{committer}, which persists it alongside the block. Any entries still missing after the commit window are fetched asynchronously by a separate \textit{reconciler} within the gossip layer.
+The private data collection mechanism is designed for any blockchain platform that follows the simulate-order-validate-commit replication protocol. We implemented it within Hyperledger Fabric~\cite{hf}, comprising approximately 33,000 lines of Go code (production logic and tests), shipped in production since v1.2. Figure~\ref{fig:peer-impl} shows how the new components (gray) extend the existing peer architecture (white).
 
 \begin{figure}
 \centering
@@ -12,11 +9,54 @@ Fabric's simulate-order-validate-commit paradigm is described in \S\ref{pdc}. Wi
 \label{fig:peer-impl}
 \end{figure}
 
-\textit{Storage and State Management.}
-The four logical stores described in \S\ref{s:design}---transient store, private data store, eligible missing data tracker, and ineligible missing data tracker---are each backed by a LevelDB instance embedded within the peer process. The partitioned state management scheme (\S\ref{s:design}) is realized by co-locating public, hashed, and private state in the same physical State DB (LevelDB or CouchDB, operator-selectable) and distinguishing them via internal key prefixes; the peer's data management layer enforces namespace isolation so that no smart contract can access another chaincode's hashed or private partitions. The hash function $H$ is configurable per channel via a configuration transaction; Fabric supports SHA-256, SHA-512, and other SHA-family algorithms, with SHA-256 as the default.
+\textit{Private Data Flow.}
+During simulation, the \textit{endorser} writes private key-value pairs to the \textit{transient store}~(\ding{182}), a temporary staging area keyed by transaction ID, while the \textit{Pvtdata Dissemination} component concurrently pushes write-sets to authorized collection members~(\ding{183}). When the \textit{gossip} layer delivers an ordered block into the \textit{block queue}~(\ding{184}), the \textit{endorsement policy validator} checks each transaction against both chaincode-level and collection-level policies~(\ding{185}). For valid transactions, the peer retrieves private data from its local \textit{transient store}~(\ding{186}); any data still missing---due to network delays or recent membership changes---is pulled from eligible peers by the \textit{Missing Pvtdata Reconciler}~(\ding{187}). The \textit{serializability validator} then performs blind OCC validation against the \textit{hashed state} partition in the State DB, verifying serializability without accessing private data (Theorem~1)~(\ding{188}). Finally, the \textit{committer} moves validated private data from the transient store to the durable \textit{Private Data Store}~(\ding{189}), which also tracks eligible and ineligible missing data for future reconciliation, and updates the public, hashed, and private partitions in the \textit{State DB}~(\ding{190}), where per-chaincode namespace isolation prevents cross-contract access to hashed or private state. A background \textit{Purge DB} process expires private data based on the block-to-live parameter $\tau$, and the \texttt{PurgePrivateData} API (Table~\ref{table:apis}) supports application-controlled deletion by committing purge markers that prevent data from appearing in queries or being reconciled, providing the ``right to forget'' behavior required by data protection regulations.
 
-\textit{Dissemination, Membership, and Lifecycle.}
-The proactive dissemination and reactive retrieval protocols (\S\ref{s:gossip}) are realized as new gRPC-based message types within Fabric's gossip component; a configurable retry mechanism with exponential back-off handles transient failures in both paths. Collection policies are stored as part of the chaincode definition in the channel configuration and evaluated at validation time as described in \S\ref{s:design}. Two complementary purging mechanisms implement the data lifecycle management policy (\S\ref{s:design}): a background retention process within the \texttt{PvtDataStore} automatically expires private data based on the block-to-live parameter $\tau$, running in asynchronous batches so as not to impede commit throughput; for application-controlled deletion, the \texttt{PurgePrivateData} API (Table~\ref{table:apis}) commits a purge marker to the ledger, and once committed, the marker prevents the data from appearing in query results or being reconciled from remote peers, providing the ``right to forget'' behavior required by data protection regulations.
+\textit{Commit-Path Optimizations.}
+Initial microbenchmarks of the commit path revealed a 50\% throughput penalty for PDCs (720 vs.\ 1440 tx/s). Profiling identified cryptographic membership checks and serial disk I/O as the dominant bottlenecks. We applied a series of crash-safe optimizations (Table~\ref{table:optimizations}) that reduced this overhead to just 6\%. Key techniques include replacing the commit-time collection membership check---which originally invoked the full policy evaluation engine with certificate deserialization and signature verification---with an O(1) organization identifier lookup (safe because cryptographic policy enforcement already occurs at endorsement and validation time), parallelizing block-store and private-data-store commits, deferring transient-store purge to a background routine, and adding a transient-store read cache.
 
-\textit{Validation and Implementation Scope.}
-The validation component was extended to enforce both chaincode-level and collection-level endorsement policies, and to perform the blind OCC validation described in \S\ref{s:design} against the hashed namespace in the State DB. The private data collection feature comprises approximately 33,000 lines of Go code, including production logic and tests.
+\begin{figure*}[t]
+\centering
+\begin{minipage}[t]{0.33\textwidth}
+\vspace{0pt}
+\centering
+\small
+\captionof{table}{Commit-path optimizations.}
+  \vspace{-0.3cm}
+\label{table:optimizations}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}c@{\,}p{3.9cm}cc@{}}
+\toprule
+\multicolumn{2}{@{}l}{\textbf{Optimization Step}} & \textbf{tx/s} & \textbf{Gain} \\
+\midrule
+ & PDC baseline (No optimizations) & 720 & --- \\
++ & O(1) membership identifier check & 880 & +22\% \\
++ & Background transient-store purge & 1040 & +44\% \\
++ & Parallel block and private data store commit & 1152 & +60\% \\
++ & Parallel purge and state DB commit & 1248 & +73\% \\
++ & Transient-store cache & 1344 & +87\% \\
+\midrule
+ & Public data only (Reference baseline) & 1440 & --- \\
+\bottomrule
+\end{tabular}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.33\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\columnwidth]{e2e_throughput_latency.pdf}
+  \vspace{-0.5cm}
+\caption{End-to-end throughput and \\commit latency for PDC and all-public.}
+\label{fig:e2e-throughput}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.33\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\columnwidth]{pdc_scalability.pdf}
+  \vspace{-0.5cm}
+\caption{Throughput and per-block validation cost as collections scale to 300.}
+\label{fig:scalability}
+\end{minipage}
+\end{figure*}

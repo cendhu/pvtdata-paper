@@ -1,21 +1,21 @@
 \begin{tikzpicture}[
     >=Stealth,
-    every node/.style={font=\small},
+    every node/.style={font=\normalsize},
     lifeline/.style={dashed, gray},
     msg/.style={->, semithick},
     bcast/.style={->, semithick},
-    hdr/.style={draw, minimum width=0.8cm, minimum height=0.35cm, font=\small},
+    hdr/.style={draw, minimum width=0.8cm, minimum height=0.35cm, font=\normalsize},
 ]
 
 % ============ (a) Order-Execute-Commit ============
 \begin{scope}[local bounding box=protocola]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
@@ -25,9 +25,8 @@
   \node at (\colC-0.35,-0.45) {\cstep{1}};
 
   % Step 2: Block creation
-  \node[right] at (\colO+0.12,-0.85) {block};
-  \node[right] at (\colO+0.12,-1.0) {creation};
-  \node at (\colO-0.35,-0.92) {\cstep{2}};
+  \node at ($({\colN},0)!0.75!({\colO},0)+(0,-0.92)$) {\cstep{2}};
+  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
 
   % Step 3: Broadcast block
   \draw[bcast] (\colO,-1.35) -- node[above] {block} (\colA,-1.35);
@@ -48,22 +47,22 @@
     node[midway,below=2pt] {commit};
 
   % Legend (single line)
-  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small] (lega) at (\colC-0.2,-3.05) {%
+  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\normalsize] (lega) at (\colC-0.2,-3.05) {%
     \cstep{1}\,\cstep{2}\,\cstep{3}\;Ordering\quad \cstep{4}\;Execution\quad \cstep{5}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\small] at (protocola.south) {(a) Order-Execute-Commit};
+\node[below=0.02cm,font=\normalsize] at (protocola.south) {(a) Order-Execute-Commit};
 
 
 % ============ (b) Execute-Order-In-Parallel & Commit ============
-\begin{scope}[xshift=6.8cm, local bounding box=protocolb]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+\begin{scope}[xshift=7.8cm, local bounding box=protocolb]
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
@@ -82,9 +81,8 @@
     node[midway,below=2pt] {execution};
 
   % Step 2: Ordering (parallel with execution)
-  \node[right] at (\colO+0.12,-0.85) {block};
-  \node[right] at (\colO+0.12,-1.0) {creation};
-  \node at (\colO-0.35,-0.92) {\cstep{2}};
+  \node at ($({\colN},0)!0.75!({\colO},0)+(0,-0.92)$) {\cstep{2}};
+  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
 
   % Step 3: Block broadcast
   \draw[bcast] (\colO,-1.45) -- node[above] {block} (\colA,-1.45);
@@ -99,22 +97,22 @@
     node[midway,below=2pt] {commit};
 
   % Legend (single line)
-  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\small] at (\colC-0.2,-3.05) {%
+  \node[draw,rounded corners,fill=white,inner sep=2pt,anchor=north west,font=\normalsize] at (\colC-0.2,-3.05) {%
     \cstep{1}\,\cstep{2}\;Execution \& Ordering\quad \cstep{3}\;Block Delivery\quad \cstep{4}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\small] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit};
+\node[below=0.02cm,font=\normalsize] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit};
 
 
 % ============ (c) Execute-Order-Validate-Commit ============
-\begin{scope}[xshift=14.4cm, local bounding box=protocolc]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.0}
+\begin{scope}[xshift=16.4cm, local bounding box=protocolc]
+  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\footnotesize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.65);
@@ -137,8 +135,8 @@
   \node at (\colC-0.35,-1.45) {\cstep{4}};
 
   % Step 5: Block creation + broadcast
-  \node[right] at (\colO+0.12,-1.7) {block};
-  \node[right] at (\colO+0.12,-1.85) {creation};
+  \node at ($({\colN},0)!0.75!({\colO},0)+(0,-1.77)$) {\cstep{5}};
+  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-1.77)$) {block\\[-1pt]creation};
   \draw[bcast] (\colO,-2.1) -- node[above] {block} (\colA,-2.1);
   \draw[bcast] (\colO,-2.1) -- (\colB,-2.1);
   \draw[bcast] (\colO,-2.1) -- (\colN,-2.1);
@@ -162,6 +160,6 @@
     \cstep{6}\;Validation\quad \cstep{7}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\small] at (protocolc.south) {(c) Simulate-Order-Validate-Commit};
+\node[below=0.02cm,font=\normalsize] at (protocolc.south) {(c) Simulate-Order-Validate-Commit};
 
 \end{tikzpicture}

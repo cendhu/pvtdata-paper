@@ -1,7 +1,7 @@
 As described in Algorithm~\ref{alg:dissemination}, after simulation the endorsing peer immediately pushes each private write-set to a subset of authorized collection members. The endorser does \textit{not} return its signed response to the client until at least $n_{required}$ peers have acknowledged receipt. Blocking on these acknowledgments guarantees that the data exists on multiple peers before the client can submit the transaction for ordering. After sending the endorsement response, a background gossip task continues pushing the write-set to the remaining peers up to $n_{dissem}$ total, spreading coverage without adding to client-observed latency.
 We separate $n_{required}$ from $n_{dissem}$ so that operators can tune the two concerns independently. Setting $n_{dissem}$ aggressively ensures most collection members receive the data proactively, which minimizes commit-time reactive pulls; keeping $n_{required}$ small protects endorsement latency.
 When the endorser cannot obtain $n_{required}$ acknowledgments before the timeout, it returns a failure to the client, who may retry with different endorsers. We deliberately do not retry dissemination at the endorser: keeping the endorsement critical path simple avoids unbounded retry delays and pushes fault handling to the client, where it belongs.
-
+\vspace{0.2cm}
 \begin{algorithm}[h]
 \centering
 \small
@@ -35,3 +35,4 @@ When the endorser cannot obtain $n_{required}$ acknowledgments before the timeou
 \caption{Proactive dissemination protocol.}
 \label{alg:dissemination}
 \end{algorithm}
+\vspace{0.2cm}

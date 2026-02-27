@@ -1,0 +1,7 @@
+# Push-with-quorum strategy: n_dissem=20, vary n_required (r)
+# r  Throughput  PropLatency  CommitLatency  DiskWrites_GB  CPU_s  NetworkTX_GB
+0    704   766   42.7    44.8   21652  24.7
+4    688   643   45.7    44.5   21718  24.5
+9    679   520   38.9    44.5   22694  25.3
+14   620   391   41.8    43.6   20617  22.1
+19   132   265   0.3     9.7    7763   7.0

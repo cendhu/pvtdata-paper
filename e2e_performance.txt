@@ -1,0 +1,5 @@
+# Application  Combined_Tput  AllPublic_Tput  Combined_Lat  AllPublic_Lat
+"EHR"            1021           1194             695           671
+"Auction"        1025           1059             752           690
+"Supply\nChain"  1468           1587             736           646
+"Trade\nFinance"  929           1034            4948          3596

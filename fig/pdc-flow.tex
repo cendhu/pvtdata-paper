@@ -1,117 +1,97 @@
 \begin{tikzpicture}[
     >=Stealth,
-    every node/.style={font=\scriptsize},
+    every node/.style={font=\footnotesize},
     lifeline/.style={dashed, gray},
     msg/.style={->, semithick},
     bcast/.style={->, semithick},
-    hdr/.style={draw, minimum width=0.9cm, minimum height=0.35cm, font=\scriptsize},
+    hdr/.style={draw, minimum width=0.7cm, minimum height=0.3cm, font=\footnotesize},
 ]
 
-% Column positions -- tighter spacing
+% Column positions -- expanded Client-Peer1 and Peer1-Peer2 gaps
 \def\colC{0}      % Client
-\def\colA{2.8}    % Peer 1
-\def\colB{6.0}    % Peer 2
-\def\colN{8.8}    % Peer n
-\def\colO{11.6}   % Ordering Service
+\def\colA{2.2}    % Peer 1
+\def\colB{5.2}    % Peer 2
+\def\colN{6.4}    % Peer n
+\def\colO{8.4}    % Ordering Service
 
 % ---- Headers ----
 \node[hdr] (hc) at (\colC,0) {Client};
 \node[hdr] (h1) at (\colA,0) {Peer 1};
 \node[hdr] (h2) at (\colB,0) {Peer 2};
 \node[hdr] (hn) at (\colN,0) {Peer n};
-\node[hdr, text width=0.8cm, align=center, font=\tiny] (ho) at (\colO,0) {Ordering\\[-1pt]Service};
+\node[hdr, text width=0.7cm, align=center, font=\tiny] (ho) at (\colO,0) {Ordering\\[-1pt]Service};
 
-% ---- Collection C1: DB cylinders next to Peer 1 and before Peer 2 ----
+% ---- Collection C1: DB cylinders ----
 \node[cylinder, draw, shape border rotate=90, aspect=0.25,
-      minimum width=0.35cm, minimum height=0.3cm,
-      inner sep=0pt] (db1) at (\colA+0.8,0) {};
+      minimum width=0.3cm, minimum height=0.25cm,
+      inner sep=0pt] (db1) at (\colA+0.7,0) {};
 \node[cylinder, draw, shape border rotate=90, aspect=0.25,
-      minimum width=0.35cm, minimum height=0.3cm,
-      inner sep=0pt] (db2) at (\colB-0.8,0) {};
+      minimum width=0.3cm, minimum height=0.25cm,
+      inner sep=0pt] (db2) at (\colB-0.7,0) {};
 \draw[<->, semithick, shorten <=1pt, shorten >=1pt] (db1.east) -- node[above, font=\tiny] {$\mathcal{C}_1$} (db2.west);
 
 % ---- Lifelines ----
 \foreach \x in {\colC,\colA,\colB,\colN,\colO}
-  \draw[lifeline] (\x,-0.2) -- (\x,-4.35);
+  \draw[lifeline] (\x,-0.2) -- (\x,-5.2);
 
 % ==== SIMULATION PHASE (Steps 1--4) ====
 
-% Step 1: Client -> Peer 1 with [Ti, Private Data]
-\draw[msg] (\colC,-0.45) -- node[above,font=\scriptsize] {$[T_i$, Private Data$]$} (\colA,-0.45);
-\node at (\colC-0.3,-0.45) {\cstep{1}};
+% Step 1: Client -> Peer 1
+\draw[msg] (\colC,-0.5) -- node[above] {$[T_i$, Pvt Data$]$} (\colA,-0.5);
+\node at (\colC-0.25,-0.5) {\cstep{1}};
 
 % Step 2: Simulation at Peer 1
-\node[font=\scriptsize,right] at (\colA+0.12,-0.75) {simulation};
-\node at (\colA-0.3,-0.75) {\cstep{2}};
+\node[right] at (\colA+0.1,-0.9) {simulation};
+\node at (\colA-0.25,-0.9) {\cstep{2}};
 
-% Step 3: Store private data + disseminate to PDC members
-\node[font=\scriptsize] at ($({\colA},-1.05)!0.5!({\colB},-1.05)$) {store pvt write-set; disseminate to members};
-\draw[msg,densely dotted] (\colA,-1.2) -- (\colB,-1.2);
-\node at (\colA+0.45,-1.2) {\cstep{3}};
-\node at (\colB+0.3,-1.2) {\cstep{3}};
-\node[font=\scriptsize,right] at (\colB+0.45,-1.2) {store received pvt data};
+% Step 3: Store + disseminate
+\node at ($({\colA},-1.25)!0.5!({\colB},-1.25)$) {store \& disseminate};
+\draw[msg,densely dotted] (\colA,-1.45) -- (\colB,-1.45);
+\node at (\colA+0.3,-1.45) {\cstep{3}};
+\node at (\colB+0.25,-1.45) {\cstep{3}};
+\node[right] at (\colB+0.35,-1.45) {store};
 
 % Step 4: Response back to Client
-\draw[msg] (\colA,-1.65) -- (\colC,-1.65);
-\node[font=\scriptsize,above] at ($({\colC},-1.65)!0.5!({\colA},-1.65)$) {response $[T_i$, Public RWSet, Hashed RWSet$]$};
-\node at (\colC-0.3,-1.65) {\cstep{4}};
+\draw[msg] (\colA,-1.95) -- (\colC,-1.95);
+\node[above] at ($({\colC},-1.95)!0.5!({\colA},-1.95)$) {$[T_i$, Pub+Hash RWSets$]$};
+\node at (\colC-0.25,-1.95) {\cstep{4}};
 
 % ==== ORDERING PHASE (Steps 5--7) ====
 
 % Step 5: Client -> Ordering Service
-\draw[msg] (\colC,-2.0) -- node[above,font=\scriptsize] {$[T_i$, Public RWSet, Hashed RWSet, Endorsements$]$} (\colO,-2.0);
-\node at (\colC-0.3,-2.0) {\cstep{5}};
+\draw[msg] (\colC,-2.4) -- node[above] {$[T_i$, RWSets, Endorsements$]$} (\colO,-2.4);
+\node at (\colC-0.25,-2.4) {\cstep{5}};
 
-% Step 6: Block creation (label shown in right-side annotation)
-\node at (\colO-0.3,-2.25) {\cstep{6}};
+% Step 6: Block creation
+\node at (\colO-0.25,-2.7) {\cstep{6}};
 
-% Step 7: Block broadcast to all peers
-\draw[bcast] (\colO,-2.5) -- node[above,font=\scriptsize] {block} (\colA,-2.5);
-\draw[bcast] (\colO,-2.5) -- (\colB,-2.5);
-\draw[bcast] (\colO,-2.5) -- (\colN,-2.5);
-\node at (\colA-0.3,-2.5) {\cstep{7}};
-\node at (\colN+0.3,-2.5) {\cstep{7}};
+% Step 7: Block broadcast
+\draw[bcast] (\colO,-3.0) -- node[above] {block} (\colA,-3.0);
+\draw[bcast] (\colO,-3.0) -- (\colB,-3.0);
+\draw[bcast] (\colO,-3.0) -- (\colN,-3.0);
+\node at (\colA-0.25,-3.0) {\cstep{7}};
+\node at (\colN+0.25,-3.0) {\cstep{7}};
 
 % ==== VALIDATION PHASE (Step 8) ====
 
-% Step 8: Validation on all peers
-\node at (\colA-0.3,-2.88) {\cstep{8}};
-\node at (\colN+0.3,-2.88) {\cstep{8}};
-\draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-2.78) -- (\colN+0.1,-2.78)
-  node[midway,below=2pt,font=\scriptsize] {validation};
+\node at (\colA-0.25,-3.5) {\cstep{8}};
+\node at (\colN+0.25,-3.5) {\cstep{8}};
+\draw[decorate,decoration={brace,amplitude=2pt,mirror}] (\colA-0.1,-3.35) -- (\colN+0.1,-3.35)
+  node[midway,below=2pt] {validation};
 
 % ==== COMMIT PHASE (Steps 9--10) ====
 
-% Step 9: Fetch missing private data (Peer 1, Peer 2) / Commit public+hashed (Peer n)
-\node at (\colA-0.3,-3.45) {\cstep{9}};
-\node at (\colB+0.35,-3.45) {\cstep{9}};
-\node[font=\scriptsize,anchor=north,text width=6cm,align=center] at ($({\colA},-3.4)!0.5!({\colB},-3.4)$) {fetch pvt data from transient store or members};
+% Step 9
+\node at (\colA-0.25,-4.15) {\cstep{9}};
+\node at (\colB+0.3,-4.15) {\cstep{9}};
+\node[anchor=north,text width=3.8cm,align=center] at ($({\colA},-4.08)!0.5!({\colB},-4.08)$) {fetch pvt data from\\[-1pt]transient store or members};
 
-\node at (\colN+0.3,-3.45) {\cstep{9}};
-\node[font=\scriptsize,right] at (\colN+0.45,-3.45) {commit public \& hashed};
+\node at (\colN+0.25,-4.15) {\cstep{9}};
+\node[right] at (\colN+0.35,-4.15) {\parbox{1.5cm}{commit pub\\[-1pt]\& hashed}};
 
-% Step 10: Commit all data (Peer 1, Peer 2)
-\node at (\colA-0.3,-4.0) {\cstep{10}};
-\node at (\colB+0.35,-4.0) {\cstep{10}};
-\node[font=\scriptsize] at ($({\colA},-4.0)!0.5!({\colB},-4.0)$) {commit private, public, \& hashed data};
-
-% ---- Right-side phase annotations (curly braces) ----
-\draw[decorate,decoration={brace,amplitude=4pt}]
-  (\colO+0.7,-0.3) -- (\colO+0.7,-1.8)
-  node[midway,right=5pt,font=\scriptsize] {Simulation};
-
-\draw[decorate,decoration={brace,amplitude=4pt}]
-  (\colO+0.7,-1.9) -- (\colO+0.7,-2.6);
-\node[font=\scriptsize,anchor=west] at (\colO+0.9,-2.1) {block creation};
-\node[font=\scriptsize,anchor=west] at (\colO+0.9,-2.45) {Ordering};
-
-\draw[decorate,decoration={brace,amplitude=4pt}]
-  (\colO+0.7,-2.7) -- (\colO+0.7,-3.15)
-  node[midway,right=5pt,font=\scriptsize] {Validation};
-
-\draw[decorate,decoration={brace,amplitude=4pt}]
-  (\colO+0.7,-3.25) -- (\colO+0.7,-4.15)
-  node[midway,right=5pt,font=\scriptsize] {Commit};
-
+% Step 10
+\node at (\colA-0.25,-4.85) {\cstep{10}};
+\node at (\colB+0.3,-4.85) {\cstep{10}};
+\node at ($({\colA},-4.85)!0.5!({\colB},-4.85)$) {commit pvt, pub, \& hashed};
 
 \end{tikzpicture}
