@@ -1,3 +1,18 @@
+\section{Design of Private Data Transactions}
+\label{s:design}
+The simulate-order-validate-commit protocol, as argued in the previous section, provides the right foundation for private data. We now describe how private data transaction processing is built on top of it.
+The design centers on three ideas: \textit{partitioned state management} that splits state into public, hashed, and private domains; \textit{blind validation} that uses the hashed partition as a conflict-complete proxy, enabling serializability checks without accessing private data; and \textit{decoupled dissemination} that separates private data distribution from block ordering, with proactive push, reactive pull, and background reconciliation ensuring eventual availability. We assume a key-value data model for both public and private state, where each state entry is a $(key, value)$ pair identified by a unique key within a namespace,
+and each key carries a version that is updated whenever the key is written by a committed transaction. Figure~\ref{fig:pdc-flow} provides an end-to-end overview of the private data collection transaction flow,
+with numbered steps spanning all four phases; Peer~1 and Peer~2 are members of collection $\mathcal{C}_1$, while Peer~n is not. The following subsections detail each component.
+
+\subsection{Partitioned State Management}
+Integrating private data into a shared ledger without exposing it to unauthorized peers during validation is the central challenge. The solution is to partition the state database into three logical domains. Each smart contract is allocated a dedicated \textit{namespace} within these domains; access and modification within a namespace are governed by an endorsement policy specifying the set of authorized peers whose signatures are required to validate state changes. The three partitions for each namespace are:
+\begin{itemize}[topsep=0pt,noitemsep,leftmargin=15pt]
+    \item \textit{Public State:} Accessible to all nodes; contains the standard replicated ledger state.
+    \item \textit{Hashed State:} Replicated across all nodes; contains cryptographic hashes of private keys and values, providing the evidence required for tamper-detection and serializability checks.
+    \item \textit{Private State:} Isolated to authorized peers; contains the actual private key-value pairs. Modifications are governed by the collection's own endorsement policy $\mathcal{E}$, which supersedes the smart contract's default endorsement policy for private data operations. In practice, $\mathcal{E}$ is defined over a subset of (or all of) the collection's membership $\mathcal{M}$, since only members possessing the private data can meaningfully endorse transactions.
+\end{itemize}
+Public State and Hashed State are consistent across all peers in the network, providing a globally uniform view of the ledger. Private State, by contrast, varies from peer to peer depending on which collections each peer's organization belongs to---a peer only maintains private state for collections in which it is authorized. By confining all private data interactions to smart contract namespaces, this partitioning satisfies \textbf{R3} (Smart Contract Controlled Access); the replicated Hashed State that mirrors Private State reinforces \textbf{R2} (Hash-Data Integrity).
 \begin{figure}[t]
 \centering
 \small
@@ -6,22 +21,7 @@
 \label{fig:pdc-flow}
   \vspace{-0.2cm}
 \end{figure}
-\section{Design of Private Data Transactions}
-\label{s:design}
-The simulate-order-validate-commit protocol, as argued in the previous section, provides the right foundation for private data. We now describe how private data transaction processing is built on top of it.
-The design centers on three ideas: \textit{partitioned state management} that splits state into public, hashed, and private domains; \textit{blind validation} that uses the hashed partition as a conflict-complete proxy, enabling serializability checks without accessing private data; and \textit{decoupled dissemination} that separates private data distribution from block ordering, with proactive push, reactive pull, and background reconciliation ensuring eventual availability. We assume a key-value data model for both public and private state, where each state entry is a $(key, value)$ pair identified by a unique key within a namespace,
-and each key carries a version that is updated whenever the key is written by a committed transaction. Figure~\ref{fig:pdc-flow} provides an end-to-end overview of the private data collection transaction flow,
-with numbered steps spanning all four phases; Peer~1 and Peer~2 are members of collection $\mathcal{C}_1$, while Peer~n is not. The following subsections detail each component.
-
 \input{sections/apis.tex}
-\subsection{Partitioned State Management}
-Integrating private data into a shared ledger without exposing it to unauthorized peers during validation is the central challenge. The solution is to partition the state database into three logical domains. Each smart contract is allocated a dedicated \textit{namespace} within these domains; access and modification within a namespace are governed by an endorsement policy specifying the set of authorized peers whose signatures are required to validate state changes. The three partitions for each namespace are:
-\begin{itemize}[topsep=0pt,noitemsep,leftmargin=15pt]
-    \item \textit{Public State:} Accessible to all nodes; contains the standard replicated ledger state.
-    \item \textit{Hashed State:} Replicated across all nodes; contains cryptographic hashes of private keys and values, providing the evidence required for tamper-detection and serializability checks.
-    \item \textit{Private State:} Isolated to authorized peers; contains the actual private key-value pairs. Modifications are governed by the collection's own endorsement policy $\mathcal{E}$, which supersedes the smart contract's default endorsement policy for private data operations. In practice, $\mathcal{E}$ is defined over a subset of (or all of) the collection's membership $\mathcal{M}$, since only members who possess the private data can meaningfully endorse transactions on it.
-\end{itemize}
-Public State and Hashed State are consistent across all peers in the network, providing a globally uniform view of the ledger. Private State, by contrast, varies from peer to peer depending on which collections each peer's organization belongs to---a peer only maintains private state for collections in which it is authorized. By confining all private data interactions to smart contract namespaces, this partitioning satisfies \textbf{R3} (Smart Contract Controlled Access); the replicated Hashed State that mirrors Private State reinforces \textbf{R2} (Hash-Data Integrity).
 \subsection{Transaction Simulation}
 The simulation phase (steps 1--4 in Figure~\ref{fig:pdc-flow}) begins when a client submits a transaction proposal to multiple endorsing peers to collect adequate endorsements as per the endorsement policies defined for the smart contract and the private data collections involved. Restricting execution to authorized peers directly satisfies \textbf{R4} (Authorized Execution Only). Private data enters the system through a \textit{transient data} field---present during execution but excluded from the final transaction payload, so it is never broadcast to all peers during ordering.
 
@@ -70,14 +70,10 @@ When the endorser cannot obtain $n_{required}$ acknowledgments before the timeou
 \subsection{Transaction Ordering}
 Once the client collects sufficient endorsements, it submits the transaction---containing the public and hashed read-write sets, but not the private write-sets---to the ordering service (steps 5--7 in Figure~\ref{fig:pdc-flow}). The ordering service is a black box with respect to transaction content: it does not inspect or interpret the read-write sets, and private data is never passed to it. Its sole responsibility is to order transactions into blocks using consensus, and the block order determines the commit order. Depending on deployment requirements, the service can run either a crash fault-tolerant (CFT) protocol such as Raft or a Byzantine fault-tolerant (BFT) consensus protocol. Whether a transaction involves public data, private data, or both, the ordering service's functionality remains unchanged.
 
-\subsection{Transaction Validation and Commit}
-Validation (step 8) and commit (steps 9--10) proceed in two sequential checks for each transaction in a block. The first check verifies the endorser signatures against the applicable endorsement policies; only transactions that pass this check advance to the second, OCC-based serializability check~\cite{occ}.
-
-\noindent\textbf{Endorsement Policy Validation.}
-Each transaction's endorsement signatures are verified against the smart contract's endorsement policy for public writes and the collection's endorsement policy $\mathcal{E}$ for private writes. A transaction that involves both public and private state must satisfy both policies. Any transaction that fails this check is immediately marked invalid and skipped, satisfying \textbf{R4} (Authorized Execution Only). Endorsement policy checks across transactions in a block can run in parallel, since they depend only on the signatures attached to each transaction and not on mutable state.
-
-\noindent\textbf{OCC Serializability Validation.}
-Transactions that pass endorsement validation proceed to OCC-based serializability checks~\cite{occ}. These checks compare the read-set versions recorded at simulation time against the current committed versions in the Public State and Hashed State. A transaction is serializable if no key in its read-set was modified by an intervening committed transaction. OCC validation proceeds sequentially in block order, since validating one transaction may update state versions visible to subsequent ones. A serialization graph can alternatively enable parallel validation of non-conflicting transactions~\cite{perf-concurrency, sparse-peer}.
+\subsection{Validation and Commit}
+\noindent\textbf{Validation.}
+Validation (step 8) proceeds in two sequential checks for each transaction in a block. First, each transaction's endorsement signatures are verified against the smart contract's endorsement policy for public writes and the collection's endorsement policy $\mathcal{E}$ for private writes. A transaction that involves both public and private state must satisfy both policies. Any transaction that fails this check is immediately marked invalid and skipped, satisfying \textbf{R4} (Authorized Execution Only). Endorsement policy checks across transactions in a block can run in parallel, since they depend only on the signatures attached to each transaction and not on mutable state.
+Transactions that pass endorsement validation advance to OCC-based serializability checks~\cite{occ}, which compare the read-set versions recorded at simulation time against the current committed versions in the Public State and Hashed State. A transaction is serializable if no key in its read-set was modified by an intervening committed transaction. OCC validation proceeds sequentially in block order, since validating one transaction may update state versions visible to subsequent ones. A serialization graph can alternatively enable parallel validation of non-conflicting transactions~\cite{perf-concurrency, sparse-peer}.
 
 Every write to a private key $k$ atomically updates its hash $H(k)$ in the replicated Hashed State, so hashed version identifiers are sufficient to detect all conflicts on private data without exposing the data itself. \textit{Blind validation} follows directly: every peer can verify serializability of private state changes without ever seeing the private data.
 
@@ -128,7 +124,7 @@ If reactive retrieval also fails within the stipulated timeout, the peer commits
 \label{alg:retrieval}
 \end{algorithm}
 
-\subsection{Dynamic Membership, Reconciliation, and Data Lifecycle}
+\subsection{Membership and Data Lifecycle}
 \label{s:dynamic-membership}
 
 \noindent\textbf{Reconciliation and Dynamic Membership.}
@@ -145,4 +141,4 @@ The private data store supports two complementary mechanisms for data lifecycle 
 \textit{Explicit purge.} For finer-grained control---e.g., to comply with Right to Forget regulations on a per-key basis---the \texttt{Purge\-Private\-Data}$(c, k)$ API allows a smart contract to permanently remove a specific key from both the current private state and all historical versions stored in the private data store. This is distinct from \texttt{DelPrivateData}, which only removes the key from the current state while retaining historical write-sets. When a purge is committed, the peer records a \textit{purge marker} keyed by $(c, H(k))$ that permanently indicates the key has been purged at a given block and transaction index. A \textit{hashed index} maps each hashed key to the block and transaction locations of its historical write-sets, enabling efficient background cleanup without scanning entire write-sets.
 
 Purge interacts with the reconciliation protocol: when a peer responds to a reconciliation or reactive retrieval request, it filters out keys that have been purged locally, returning a partial write-set rather than a complete one. The requesting peer accepts partial write-sets by verifying individual key hashes rather than a single hash over the entire collection write-set. If a requesting peer receives data for a key it has already purged, it discards the data. Conversely, if a peer requests data that the responder has already purged, the responder omits those keys and the requester re-queues the request until it observes the purge transaction in a committed block, at which point it removes the entry from its missing data set.
-In both mechanisms, on-chain hashes are preserved after private data removal, keeping the historical audit trail tamper-evident. The implications of retaining these on-chain hashes are discussed in \S\ref{s:threat-model}.
+In both mechanisms, on-chain hashes are preserved after private data removal, keeping the audit trail tamper-evident; the implications are discussed in \S\ref{s:threat-model}.
