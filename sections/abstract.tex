@@ -5,8 +5,8 @@ Blockchain technology provides a decentralized and immutable ledger, but its inh
   private data is shared only among authorized peers, while cryptographic hashes are recorded on the ledger for tamper-evidence and serializability verification. The key 
   theoretical contribution is \textbf{blind validation}: we prove that on-chain hashes form a \textit{conflict-complete proxy} for private state---OCC-based serializability
   checks on hashed state detect exactly the same conflicts as checks on the underlying private data, producing neither false negatives nor false positives. This enables the
-  entire network to verify the correctness and serializability of private transactions without ever accessing the private data itself. We design a two-phase gossip-based protocol
-  for proactive dissemination and reactive retrieval of private data, and we formalize the collection abstraction with seven design requirements. Our solution is designed for any
+  entire network to verify the correctness and serializability of private transactions without ever accessing the private data itself. We design a three-component dissemination protocol---proactive push during simulation, reactive pull at commit time,
+  and background reconciliation post-commit---and we formalize the collection abstraction with seven design requirements. Our solution is designed for any
   blockchain platform that follows the simulate-order-validate-commit replication protocol. We implement it in Hyperledger Fabric and demonstrate that private data collections add
   only 3--14\% overhead to transaction throughput while providing fine-grained data privacy. The mechanism has been in production since Hyperledger Fabric v1.2 and is deployed by
   organizations including Walmart, MediLedger, Honeywell, Oracle and GSBN.
