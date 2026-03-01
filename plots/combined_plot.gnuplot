@@ -13,9 +13,9 @@ set ytics nomirror out scale 0.4 offset 0.8,0
 set y2tics nomirror out scale 0.4 offset -0.8,0
 
 # ── Color definitions matching paper palette ──
-set style line 1 lc rgb "#2C5B84" lt 1 lw 1.5    # Phase 1: primary blue
-set style line 2 lc rgb "#E58A2B" lt 1 lw 1.5    # Phase 2: secondary orange
-set style line 3 lc rgb "#417B45" lt 1 lw 1.5    # Reconciliation: green
+set style line 1 lc rgb "#2C5B84" lt 1 lw 2.0    # Phase 1: primary blue, solid
+set style line 2 lc rgb "#E58A2B" dt (8,4) lw 2.5    # Phase 2: secondary orange, long dash bold
+set style line 3 lc rgb "#417B45" dt (2,3) lw 2.0    # Reconciliation: green, dotted
 
 # ═══════════════════════════════════════
 # (a) Baseline: Throughput + Reconciliation
@@ -34,7 +34,7 @@ set y2tics 25
 
 set key top left font "Times,10" spacing 1.0 samplen 1.2 width -1 box lw 1.0
 unset title
-set label 1 "(a) Baseline" at graph 0.5, graph -0.30 center font "Times-Bold,10"
+set label 1 "(a) Baseline" at graph 0.5, graph -0.22 center font "Times-Bold,10"
 
 # Phase boundary annotation
 set arrow 1 from 127, graph 0 to 127, graph 1 nohead dt 4 lw 0.8 lc rgb "#888888"
@@ -68,7 +68,7 @@ set y2tics 25
 
 set key top left font "Times,10" spacing 1.0 samplen 1.2 width -1 box lw 1.0
 unset title
-set label 1 "(b) Stress (Failures)" at graph 0.5, graph -0.30 center font "Times-Bold,10"
+set label 1 "(b) Stress (Failures)" at graph 0.5, graph -0.22 center font "Times-Bold,10"
 
 # Phase boundary
 set arrow 1 from 157, graph 0 to 157, graph 1 nohead dt 4 lw 0.8 lc rgb "#888888"

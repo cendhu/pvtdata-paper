@@ -32,4 +32,4 @@ set key top right font "Times,18" spacing 1.1 samplen 1.5 width 0 box lw 1
 
 # ── Plot ──
 plot "pdc_scalability.txt" using ($0):2:xticlabels(1) with boxes title "Throughput" lc rgb "#2C5B84", \
-     "" using ($0):($4*1000.0) with linespoints title "Validation Cost" lw 3 pt 5 ps 1.4 lc rgb "#C43A31" axes x1y2
+     "" using ($0):($4*1000.0) with linespoints title "Validation Cost" lw 3 pt 4 ps 1.4 lc rgb "#C43A31" axes x1y2
