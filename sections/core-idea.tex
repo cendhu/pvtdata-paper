@@ -1,3 +1,52 @@
+\section{Private Data Collections}
+\label{pdc}
+The mechanism rests on two complementary pillars: (1) \textit{decoupled storage}, where private data is shared and stored only on peers owned by a defined set of authorized organizations---ensuring \textit{privacy}; and (2) \textit{on-chain evidence}, where the cryptographic hash of private data is recorded on the replicated ledger---ensuring \textit{auditability}. A single transaction may modify both public and private data simultaneously, and the two must commit atomically; a partial commit renders the on-chain evidence meaningless.
+
+Formally, a private data collection is defined as a tuple $\mathcal{C} = (id, \mathcal{M}, \tau)$ with the following parameters:
+\begin{itemize}[topsep=0pt,noitemsep,leftmargin=15pt]
+\item $id$: unique collection identifier
+\item $\mathcal{M}$: membership policy specifying the set of authorized organizations
+\item $\tau$: block-to-live (BTL) retention---the number of blocks after which private data is purged, enabling compliance with data-retention regulations; $\tau = 0$ means indefinite retention
+\end{itemize}
+A smart contract may define multiple collections, each with independent membership policies. Additional parameters---such as the collection's endorsement policy $\mathcal{E}$ and dissemination thresholds $n_{required}$, $n_{dissem}$---are introduced when the formal definition is extended in \S\ref{s:design}.
+Figure~\ref{fig:fsc-pvt-data-food-traceability} illustrates the mechanism in the food traceability setting. Five collections ($\mathcal{C}_1$--$\mathcal{C}_5$) are defined along participant relationships: $\mathcal{C}_1$--$\mathcal{C}_4$ each span two adjacent parties in the supply chain, while $\mathcal{C}_5$ is private to the Retailer alone. Public data---order IDs, product lots---lands on the replicated ledger alongside a hash for each private data element; the actual quantities, invoices, and pricing terms are stored only in the relevant collection. Competitors can verify product provenance without ever seeing each other's contracts, and any participant can confirm a disclosed record's authenticity by checking it against the pre-existing on-chain hash. Because each hash is committed as part of a block, the ledger provides a tamper-evident timeline that all participants---even those that never held the private data---can trust.
+
+\begin{figure}[t]
+\centering
+\small
+\resizebox{\columnwidth}{!}{\input{fig/fsc-private-data.tex}}
+\vspace{-0.5cm}
+\caption{Private data is visible only to authorized parties; on-chain hashes provide proof of existence and traceability.}
+\label{fig:fsc-pvt-data-food-traceability}
+\vspace{-0.5cm}
+\end{figure}
+
+\subsection{Design Requirements}
+Table~\ref{table:comparison} captured a basic set of differentiators among privacy mechanisms. The use case in \S\ref{motivation} and the architectural constraints of our key idea give rise to a more comprehensive set of seven design requirements, across three categories.
+
+\noindent\textit{(1) Correctness.} Integrating private data into a blockchain must not weaken the transactional guarantees. As the food traceability scenario illustrates, updating a public record and its private counterpart must be atomic---a partial commit leaves the ledger inconsistent and the on-chain hash meaningless. Beyond atomicity, the hash recorded on the ledger must faithfully reflect the off-chain data at all times; otherwise, the auditability guarantee evaporates and any party examining the ledger is working from a lie.
+\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+\item[\textbf{R1}] \textit{Transactional Atomicity and Isolation:} When a transaction modifies both public and private data, the system must guarantee atomicity and serializable isolation to maintain consistency.
+\item[\textbf{R2}] \textit{Hash-Data Integrity:} The hash of the private data stored on the replicated ledger must always remain in sync with the actual private data stored in the off-chain collection, acting as a verifiable proof of existence.
+\end{enumerate}
+
+\noindent\textit{(2) Access Control.} Privacy guarantees are only as strong as the enforcement beneath them. In a food supply chain, pricing data must be accessible only to the buyer and seller, and access control must be embedded in the same smart contract that governs supply-chain workflows---a separate policy layer creates a seam that can be misconfigured. Equally important: private data must never reach unauthorized peers, even transiently during transaction execution.
+\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+\item[\textbf{R3}] \textit{Smart Contract Controlled Access:} Private data in a collection must only be accessible or modifiable via a smart contract, ensuring all data interactions adhere to agreed-upon business processes.
+\item[\textbf{R4}] \textit{Authorized Execution Only:} Transactions involving private data must only be executed on peers owned by member organizations of the specified collections, preventing unauthorized peers from seeing or processing private data.
+\end{enumerate}
+
+\noindent\textit{(3) Operational.} Consortia are not static. Organizations join and leave, regulations change, and data that must be retained today may need to be purged tomorrow. A new carrier joining GSBN needs access to historical shipping documents; an organization subject to data-retention regulations may need private records purged after a mandated period without disturbing the ledger itself. Private data is also excluded from the consensus-driven block delivery---because blocks are distributed to all peers, including those not authorized to see the private data---so the system must provide an alternative path through which authorized peers can reliably obtain what they are entitled to hold.
+\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
+\item[\textbf{R5}] \textit{Dynamic Membership:} Collection membership must be mutable. New members must be able to synchronize historical private data, while removed members should lose access to any data persisted after their removal.
+\item[\textbf{R6}] \textit{Data Lifecycle Management:} The system must support a block-to-live (BTL) property for private data, allowing for automatic purging to comply with data retention policies or ``right to forget'' regulations.
+\item[\textbf{R7}] \textit{Data Availability:} Since private data is excluded from the consensus-driven block delivery, the system must ensure that all authorized peers can obtain the private data they need before committing a block, even in the presence of network partitions and peer failures.
+\end{enumerate}
+
+\subsection{Blockchain Architecture Requirements}
+\label{ss:arch-req}
+We now show that private data collections require a specific class of blockchain architecture---one that natively supports selective simulation and data dissemination. In a permissioned blockchain network, a \textit{client} submits transactions on behalf of an application. A \textit{peer} is a node owned by a member organization that maintains a copy of the ledger, executes smart contracts, and validates transactions. An \textit{ordering service} is a decentralized cluster of nodes that establishes the total order of transactions via a consensus protocol. Each peer belongs to exactly one organization, and organizations may operate multiple peers for redundancy. We evaluate three prevalent replication protocols, depicted in Figure~\ref{fig:replication-protocol}.
+
 \begin{figure*}[t]
 \centering
 \small
@@ -8,49 +57,9 @@
   \vspace{-0.2cm}
 \end{figure*}
 
-\section{Private Data Collections: Concept and Design Requirements}
-\label{pdc}
-To resolve the privacy-auditability tension identified in \S\ref{motivation}, we integrate private data directly into the blockchain node, giving rise to the \textit{private data collection} mechanism.
-
-\subsection{Key Idea}
-The mechanism rests on two complementary pillars: (1) \textit{decoupled storage}, where private data is shared and stored only on peers owned by member organizations of a \textit{collection} with defined membership---ensuring \textit{privacy}; and (2) \textit{on-chain evidence}, where the cryptographic hash of private data is recorded on the replicated ledger---ensuring \textit{auditability}. A single transaction may modify both public and private data simultaneously, and the two must commit atomically; a partial commit renders the on-chain evidence meaningless.
-
-Formally, a private data collection is defined as a tuple $\mathcal{C} = (id, \mathcal{M}, \tau)$ with the following parameters:
-\begin{itemize}[topsep=0pt,noitemsep,leftmargin=15pt]
-\item $id$: unique collection identifier
-\item $\mathcal{M}$: membership policy specifying the set of authorized organizations
-\item $\tau$: block-to-live (BTL) retention---the number of blocks after which private data is purged, enabling compliance with data-retention regulations; $\tau = 0$ means indefinite retention
-\end{itemize}
-A smart contract may define multiple collections, each with independent membership policies. Additional parameters---such as the collection's endorsement policy $\mathcal{E}$ and dissemination thresholds $n_{required}$, $n_{dissem}$---are introduced when the formal definition is extended in \S\ref{s:design}.
-
-Figure~\ref{fig:fsc-pvt-data-food-traceability} illustrates the mechanism in the food traceability setting. Five collections ($\mathcal{C}_1$--$\mathcal{C}_5$) are defined along participant relationships: $\mathcal{C}_1$--$\mathcal{C}_4$ each span two adjacent parties in the supply chain, while $\mathcal{C}_5$ is private to the Retailer alone. Public data---order IDs, product lots---lands on the replicated ledger alongside a hash for each private data element; the actual quantities, invoices, and pricing terms are stored only in the relevant collection. Competitors can verify product provenance without ever seeing each other's contracts, and any participant can confirm a disclosed record's authenticity by checking it against the pre-existing on-chain hash. Because each hash is committed as part of a block, the ledger provides a tamper-evident timeline that all participants---even those that never held the private data---can trust.
-
-\subsection{Design Requirements}
-Table~\ref{table:comparison} captured a basic set of differentiators among privacy mechanisms. The use case in \S\ref{motivation} and the architectural constraints of our key idea give rise to a more comprehensive set of seven design requirements, across three categories.
-
-\noindent\textit{(1) Correctness.} Integrating private data into a blockchain must not weaken the transactional guarantees. As the food traceability scenario illustrates, updating a public record and its private counterpart must be atomic---a partial commit leaves the ledger inconsistent and the on-chain hash meaningless. Beyond atomicity, the hash recorded on the ledger must faithfully reflect the off-chain data at all times; otherwise, the auditability guarantee evaporates and any party examining the ledger is working from a lie.
-\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-\item[\textbf{R1}] \textit{Transactional Atomicity and Isolation:} When a transaction modifies both public and private data, the system must guarantee atomicity and serializable isolation to maintain overall consistency.
-\item[\textbf{R2}] \textit{Hash-Data Integrity:} The hash of the private data stored on the replicated ledger must always remain in sync with the actual private data stored in the off-chain collection, acting as a verifiable proof of existence.
-\end{enumerate}
-
-\noindent\textit{(2) Access Control.} Privacy guarantees are only as strong as the enforcement beneath them. In a food supply chain, pricing data must be accessible only to the buyer and seller, and access control must be embedded in the same smart contract that governs supply-chain workflows---a separate policy layer creates a seam that can be misconfigured. Equally important: private data must never reach unauthorized peers, even transiently during transaction execution.
-\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-\item[\textbf{R3}] \textit{Smart Contract Controlled Access:} Private data in a collection must only be accessible or modifiable via a smart contract, ensuring all data interactions adhere to agreed-upon business processes.
-\item[\textbf{R4}] \textit{Authorized Execution Only:} Transactions involving private data must only be executed on peers owned by member organizations of the specified collections, preventing unauthorized peers from seeing or processing private data.
-\end{enumerate}
-
-\noindent\textit{(3) Operational.} Consortia are not static. Organizations join and leave, regulations change, and data that must be retained today may need to be purged tomorrow. A new carrier joining GSBN needs access to historical shipping documents; an organization subject to data-retention regulations may need private records purged after a mandated period without disturbing the ledger itself. Private data is also excluded from the consensus-driven block delivery by design, so the system must provide an alternative path through which authorized peers can reliably obtain what they are entitled to hold.
-\begin{enumerate}[topsep=0pt,noitemsep,leftmargin=15pt]
-\item[\textbf{R5}] \textit{Dynamic Membership:} Collection membership must be mutable. New members must be able to synchronize historical private data, while removed members should lose access to any data persisted after their removal.
-\item[\textbf{R6}] \textit{Data Lifecycle Management:} The system must support a block-to-live (BTL) property for private data, allowing for automatic purging to comply with data retention policies or ``right to forget'' regulations.
-\item[\textbf{R7}] \textit{Data Availability:} Since private data is excluded from the consensus-driven block delivery, the system must ensure that all authorized peers can obtain the private data they need before committing a block, even in the presence of network partitions and peer failures.
-\end{enumerate}
-
-\subsection{Blockchain Architecture Requirements}
-We now show that private data collections require a specific class of blockchain architecture---one that natively supports selective simulation and data dissemination. In a permissioned blockchain network, a \textit{client} submits transactions on behalf of an application. A \textit{peer} is a node owned by a member organization that maintains a copy of the ledger, executes smart contracts, and validates transactions. An \textit{ordering service} is a decentralized cluster of nodes that establishes the total order of transactions via a consensus protocol. Each peer belongs to exactly one organization, and organizations may operate multiple peers for redundancy. We evaluate three prevalent replication protocols, depicted in Figure~\ref{fig:replication-protocol}, and establish that only the simulate-order-validate-commit model satisfies all seven requirements.
 \textit{Order-Execute-Commit and Execute-Order-In-Parallel \& Commit.}
-Figures~\ref{fig:replication-protocol}(a) and (b) show two protocols that differ in timing: the first orders transactions before execution, the second overlaps both. Despite this structural difference, they share a fatal property for our purposes---every node must execute every transaction to maintain ledger consistency. In order-execute-commit (Ethereum~\cite{ethereum}, Quorum~\cite{Quorum}, Hyperledger Besu~\cite{besu}), blocks are ordered by consensus and then broadcast for serial execution across all nodes. The execute-order-in-parallel variant (BlockchainRDBMS~\cite{pgchain}) is more aggressive---peers execute and the ordering service sequences concurrently---but all nodes still verify the final block. Restricting execution to a subset of peers in either model would violate state machine replication (SMR) guarantees, breaking R4 (Authorized Execution Only). Every smart contract runs on every node, which means private data touched during execution is visible to the entire network (violating R3), and without a distinct validation phase there is no mechanism to verify private transactions without re-executing them (violating R7).
+
+Figures~\ref{fig:replication-protocol}(a) and (b) show two protocols that differ in flow: the first (Ethereum~\cite{ethereum}, Quorum~\cite{Quorum}, Hyperledger Besu~\cite{besu}) orders before execution, the second (BlockchainRDBMS~\cite{pgchain}) overlaps both. Despite this structural difference, they share a fatal property: every node must execute every transaction to maintain ledger consistency, exposing private data to all participants and breaking privacy altogether (R4). The absence of a distinct validation phase further precludes verifying private transactions without re-executing them.
 
 \textit{Simulate-Order-Validate-Commit.}
-Figure~\ref{fig:replication-protocol}(c) separates four phases: transactions are speculatively simulated on a configurable subset of nodes, ordered by a consensus service, and then validated via authorization policy checks and OCC~\cite{occ} based serializability checks before commit. Hyperledger Fabric~\cite{hf} implements this protocol. Which subset of peers simulates a given transaction is governed by an \textit{endorsement policy}---a predicate specifying the set of peers whose signatures are required for the transaction to be considered valid. Each endorsing peer independently executes the smart contract and signs the resulting read-write set; the collected signatures are later verified during the validation phase. The key structural property is the separation of simulation from validation: because simulation runs on a subset of nodes dictated by the endorsement policy rather than all of them, we can restrict it to authorized collection members, enabling R4 and R3; the separate validation phase can be augmented to verify hashes of private data on the replicated ledger, enabling R2; the existing OCC-based validation can be extended to cover both public and private state, enabling R1; the decoupling of simulation from consensus creates a natural insertion point for peer-to-peer dissemination, enabling R5 and R7; and because the architecture already separates execution outcomes from the immutable ledger, private data can be stored independently, enabling lifecycle management through purging while retaining on-chain hashes (R6).
+Figure~\ref{fig:replication-protocol}(c) separates four phases: transactions are speculatively simulated on a configurable subset of nodes, ordered by a consensus service, and then validated via authorization policy checks and optimistic concurrency control (OCC)~\cite{occ} based serializability checks before commit. Hyperledger Fabric~\cite{hf} implements this protocol. An \textit{endorsement policy} governs which subset of peers simulates each transaction; each endorsing peer independently executes the smart contract and signs the resulting read-write set. The key structural property is the separation of simulation from validation: simulation can be restricted to authorized collection members (R3, R4); the validation phase can verify hashes on the replicated ledger without accessing private data (R1, R2); the gap between simulation and ordering provides a natural insertion point for peer-to-peer dissemination (R5, R7); and because execution outcomes are decoupled from the immutable ledger, private data can be stored and purged independently (R6).

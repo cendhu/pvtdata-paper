@@ -1,10 +1,19 @@
 \section{Evaluation}
 \label{s:eval}
 
-We evaluate four questions: (1)~what is the end-to-end overhead of private data relative to all-public transactions? (2)~how sensitive is performance to dissemination parameters? (3)~how far does the system scale with collection count? and (4)~how resilient is the system to membership changes and faults?
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{dissemination_sensitivity.pdf}
+\vspace{-0.5cm}
+\caption{Dissemination parameter sensitivity on a 20-organization WAN network: pull-dominant (a,\,b) varying $n_{dissem}$ and push-with-quorum (c,\,d) varying $n_{required}$.}
+\label{fig:dissemination}
+\vspace{-0.2cm}
+\end{figure*}
+
+We evaluate four performance criteria: (1)~what is the end-to-end overhead of private data relative to all-public transactions? (2)~how sensitive is performance to dissemination parameters? (3)~how far does the system scale with collection count? and (4)~how resilient is the system to membership changes and faults?
 
 \noindent\textbf{Experimental Setup.}
-We design four application workloads modeling multi-party business processes to stress different dimensions of the PDC mechanism (Table~\ref{table:workloads}). Supply Chain maximizes the collection count per organization; Auction isolates dissemination throughput; Trade Finance stresses scalability under strict majority endorsement; and EHR tests read throughput. For each, we compare a \textit{PDC variant} against an \textit{all-public variant} to isolate privacy overhead. In addition, we develop \texttt{PDC\_BENCH}, a minimal chaincode for controlled micro-benchmarking that exercises all public and private data APIs, enabling direct measurement of individual PDC operations against a public-ledger baseline.
+We design four application workloads modeling multi-party business processes to stress different dimensions of the PDC mechanism (Table~\ref{table:workloads}). Supply Chain maximizes the collection count per organization; Auction isolates dissemination throughput; Trade Finance stresses scalability under strict majority endorsement; and EHR tests read throughput. For each, we compare a \textit{PDC variant} against an \textit{all-public variant} to isolate privacy overhead. In addition, we develop \texttt{PDC\_BENCH}, a minimal smart contract for controlled micro-benchmarking that exercises all public and private data APIs, enabling direct measurement of individual PDC operations against a public-ledger baseline.
 
 \begin{table}[t]
 \centering
@@ -44,26 +53,16 @@ Across all four workloads, PDCs consistently reduce peak throughput: 3\% for Auc
 EHR sees the largest drop because it is the most read-heavy workload (3 reads per tx) and each private-data read adds a private-data-store lookup. Trade Finance suffers from its strict 7-of-12 endorsement policy: the additional dissemination and commit-path work compounds an already long critical path. Auction and Supply Chain, with simpler profiles and lighter endorsement policies, see the smallest overheads.
 Commit latency increases by 4--17\% across the workloads, consistent with the additional hash verification and private-data-store operations on the commit path.
 
-\textit{Where does the overhead originate?} Per-node Prometheus metrics and disk I/O counters collected during each 300\,s run point to three sources.
+\textit{Where does the overhead originate from?} Per-node Prometheus metrics and disk I/O counters collected during each 300\,s run point to three sources.
 (1)~\textit{CPU:} per-transaction cost rises 10--20\% due to hash computation, transient-store writes, and private-data-store flushes---none of which exist in the all-public path.
 (2)~\textit{Network:} because the ordering service never sees private payloads, they must be distributed point-to-point via gossip, increasing per-transaction traffic by 10--15\%; missed payloads trigger reactive retrieval that further inflates peer-to-peer traffic.
 (3)~\textit{Disk reads:} committers query the transient store and private-data store to match payloads against on-chain hashes, increasing read I/O by 2--4$\times$.
 Notably, total disk \textit{writes} decrease: in the all-public path every peer writes the full payload, whereas with PDCs the ledger records only a hash and only authorized peers persist the private payload---a storage benefit of selective replication.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{dissemination_sensitivity.pdf}
-\vspace{-0.5cm}
-\caption{Dissemination parameter sensitivity on a 20-organization WAN network: pull-dominant (a,\,b) varying $n_{dissem}$ and push-with-quorum (c,\,d) varying $n_{required}$.}
-\label{fig:dissemination}
-\vspace{-0.2cm}
-\end{figure*}
-
 \subsection{Scalability}
-To stress-test the per-collection overhead, we deploy a 10-org WAN network and scale the number of private data collections attached to a single chaincode from 10 to 300 in increments of 50 (configurations c10--c300). The workload uses \texttt{PDC\_BENCH}: each transaction writes to a single randomly selected collection; all other parameters (block size, endorsement policy, value size) remain fixed. Figure~\ref{fig:scalability} plots throughput (bars) and per-block validation cost (line) as the collection count grows.
-The system sustains peak throughput (740--760\,tx/s) up to 250 collections. Starting at c150, average transaction latency begins to stretch; at c300, throughput drops by 11\% (to 660\,tx/s) while average latency spikes to 24\,s. Disk I/O, ledger commit time, and state DB metrics remain flat throughout the range, confirming that the storage layer is \emph{not} the bottleneck. Instead, the dominant cost is CPU time spent in the validation phase: per-block validation cost rises linearly from 0.20\,s at c10 to 0.59\,s at c300 (Figure~\ref{fig:scalability}).
+To stress-test the per-collection overhead, we deploy a 10-org WAN network and scale the number of private data collections attached to a single smart contract from 10 to 300 in increments of 50 (configurations c10--c300). The workload uses \texttt{PDC\_BENCH}: each transaction writes to a single randomly selected collection; all other parameters (block size, endorsement policy, value size) remain fixed. Figure~\ref{fig:scalability} plots throughput (bars) and per-block validation cost (line) as the collection count grows.
+The system sustains peak throughput (740--760\,tx/s) up to 250 collections. Starting at c150, average latency begins to stretch; at c300, throughput drops by 11\% (to 660\,tx/s) while average latency spikes to 24\,s. Disk I/O, ledger commit time, and state DB metrics remain flat throughout the range, confirming that the storage layer is \emph{not} the bottleneck. The dominant cost is CPU time spent in the validation phase: per-block validation cost rises linearly from 0.20\,s at c10 to 0.59\,s at c300 (Figure~\ref{fig:scalability}).
 
-This degradation is \emph{not} an architectural limit but an implementation artifact. The root cause is a serialization shortcut: all collection definitions are stored in a single protobuf package per chaincode, and the validator fully deserializes this package for every transaction that touches any collection---even though each transaction touches only one. At 300 collections, this deserialization runs hundreds of times per second, exhausting CPU headroom. Caching the parsed package or indexing individual collection policies would eliminate the linear penalty without architectural changes. Real-world deployments today rarely exceed a few dozen collections per chaincode, well within the flat-throughput region.
+This degradation is \emph{not} an architectural limit but an implementation artifact. The root cause is a serialization shortcut: all collection definitions are stored in a single encoded binary format package per smart contract, and the validator fully deserializes this package for every transaction that touches any collection---even though each transaction touches only one. At 300 collections, this deserialization runs hundreds of times per second, exhausting CPU headroom. Caching the parsed package or indexing individual collection policies would eliminate the linear penalty without architectural changes. Real-world deployments today rarely exceed a few dozen collections per smart contract, well within the flat-throughput region.
 
 \subsection{Dissemination Sensitivity}
 To isolate the effect of the dissemination parameters introduced in Algorithm~\ref{alg:dissemination}, we deploy a 20-organization WAN network where all peers share a single private data collection.
@@ -80,7 +79,7 @@ Under push-with-quorum, all private data reaches every peer (disk writes remain 
 We conclude that asynchronous push ($n_{dissem}=N{-}1, n_{required}=0$) is the optimal WAN configuration: it ensures all peers receive private data before commit time (full disk writes across all peers), maximizes throughput, and eliminates commit-time pull storms and deferred reconciliation.
 
 \subsection{Dynamic Membership and Fault Tolerance}
-We design a two-phase experiment on a five-organization Fabric network (one peer per org). In Phase~1, four organizations populate a shared private data collection with 50,000 key-value pairs. In Phase~2, the collection policy is expanded to a fifth organization via a chaincode upgrade; the new peer reconciles the 50,000 historical records while an additional 50,000 transactions execute concurrently. We run this under two conditions: (i)~a \textit{baseline} with no faults, and (ii)~a \textit{stress} configuration that crashes the newly joined peer mid-reconciliation and an existing data-holder peer, each followed by recovery after a delay. Correctness is verified by fetching all 100,000 key-value pairs from every peer after stabilization.
+We design a two-phase experiment on a five-organization Fabric network (one peer per org). In Phase~1, four organizations populate a shared private data collection with 50,000 key-value pairs. In Phase~2, the collection policy is expanded to a fifth organization via a smart contract upgrade; the new peer reconciles the 50,000 historical records while an additional 50,000 transactions execute concurrently. We run this under two conditions: (i)~a \textit{baseline} with no faults, and (ii)~a \textit{stress} configuration that crashes the newly joined peer mid-reconciliation and an existing data-holder peer, each followed by recovery after a delay. Correctness is verified by fetching all 100,000 key-value pairs from every peer after stabilization.
 
 \begin{figure}[t]
 \centering
@@ -91,5 +90,5 @@ We design a two-phase experiment on a five-organization Fabric network (one peer
 \vspace{-0.3cm}
 \end{figure}
 
-In the baseline (Figure~\ref{fig:dynamic-membership}(a)), throughput rises from 396\,tx/s to 474\,tx/s when the fifth organization joins, and reconciliation of 50,000 historical records completes at $t \approx 229$\,s without visible throughput degradation, confirming that background synchronization is effectively isolated from the transaction pipeline.
-Under stress (Figure~\ref{fig:dynamic-membership}(b)), crashing the synchronizing peer (\texttt{-org5}) halts reconciliation immediately, but it resumes from its last checkpoint upon recovery (\texttt{+org5}). Crashing an existing data-holder (\texttt{-org2}) drops throughput from ${\sim}500$\,tx/s to the 4-peer baseline of ${\sim}400$\,tx/s. Despite compound failures, reconciliation reaches 100\% data consistency at $t \approx 259$\,s, confirming that the gossip-based pull mechanism is self-healing.
+In the baseline (Figure~\ref{fig:dynamic-membership}(a)), throughput rises from 396\,tx/s to 474\,tx/s when the fifth organization joins, and reconciliation of 50,000 historical records completes at $t \approx 229$\,s without visible throughput degradation, confirming that background synchronization is isolated from the transaction pipeline.
+Under stress (Figure~\ref{fig:dynamic-membership}(b)), crashing the synchronizing peer (\texttt{-org5}) halts reconciliation, but it resumes from its last checkpoint upon recovery (\texttt{+org5}). Crashing an existing data-holder (\texttt{-org2}) drops throughput from ${\sim}500$\,tx/s to the 4-peer baseline of ${\sim}400$\,tx/s. Despite compound failures, reconciliation reaches 100\% data consistency at $t \approx 259$\,s, confirming that the pull mechanism is self-healing.

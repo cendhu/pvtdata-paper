@@ -45,11 +45,11 @@
 \node at (\colA-0.25,-0.9) {\cstep{2}};
 
 % Step 3: Store + disseminate
-\node at ($({\colA},-1.25)!0.5!({\colB},-1.25)$) {store \& disseminate};
+\node at ($({\colA},-1.25)!0.5!({\colB},-1.25)$) {store \& disseminate pvt. data};
 \draw[msg,densely dotted] (\colA,-1.45) -- (\colB,-1.45);
 \node at (\colA+0.3,-1.45) {\cstep{3}};
 \node at (\colB+0.25,-1.45) {\cstep{3}};
-\node[right] at (\colB+0.35,-1.45) {store};
+\node[right] at (\colB+0.35,-1.45) {store pvt. data};
 
 % Step 4: Response back to Client
 \draw[msg] (\colA,-1.95) -- (\colC,-1.95);
@@ -59,7 +59,7 @@
 % ==== ORDERING PHASE (Steps 5--7) ====
 
 % Step 5: Client -> Ordering Service
-\draw[msg] (\colC,-2.4) -- node[above] {$[T_i$, RWSets, Endorsements$]$} (\colO,-2.4);
+\draw[msg] (\colC,-2.4) -- node[above] {$[T_i$, Pub+Hash RWSets, Endorsements$]$} (\colO,-2.4);
 \node at (\colC-0.25,-2.4) {\cstep{5}};
 
 % Step 6: Block creation

@@ -28,11 +28,11 @@ Before $T_i$ reaches validation, $T_j$ commits and updates $k_2$ in $c_1$ (versi
 \centering
 \begin{tabular}{@{} l l l l l l l @{}}
 \toprule
-\textbf{Phase} & \textbf{Public ($k_1$)} & \textbf{Hashed ($H(k_2)$, $c_1$)} & \textbf{Hashed ($H(k_3)$, $c_2$)} & \textbf{Private ($k_2$, $c_1$)} & \textbf{Private ($k_3$, $c_2$)} & \textbf{Result} \\
+\textbf{Phase} & \textbf{Public ($k_1$)} & \textbf{Hashed ($c_1$, $H(k_2)$)} & \textbf{Hashed ($c_2$, $H(k_3)$)} & \textbf{Private ($c_1$, $k_2$)} & \textbf{Private ($c_2$, $k_3$)} & \textbf{Result} \\
 \midrule
-1.~Initial disk & val:$v_1$, ver:v1 & hash:$H(v_5)$, ver:v5 & hash:$H(v_5)$, ver:v5 & val:$v_5$ & val:$v_5$ & --- \\
+1.~Initial disk & value:$v_1$, ver:v1 & value:$H(v_5)$, ver:v5 & value:$H(v_5)$, ver:v5 & value:$v_5$ & value:$v_5$ & --- \\
 2.~Simulate $T_i$ & R:v1, W:$v_2$ & R:v5, W:$H(v_3)$ & R:v5, W:$H(v_4)$ & W:$v_3$ & W:$v_4$ & RW-sets captured \\
-3.~$T_j$ commits & --- & \textbf{ver:v5$\to$v8}, hash:$H(v_8)$ & --- & val:$v_8$ & --- & Disk updated \\
+3.~$T_j$ commits & --- & \textbf{ver:v5$\to$v8}, value:$H(v_8)$ & --- & value:$v_8$ & --- & Disk updated \\
 4.~Validate $T_i$ & R(v1)=Disk(v1) \cmark & R(v5)$\neq$Disk(v8) \xmark & R(v5)=Disk(v5) \cmark & No access & No access & \textbf{$T_i$ invalid} \\
 \bottomrule
 \end{tabular}

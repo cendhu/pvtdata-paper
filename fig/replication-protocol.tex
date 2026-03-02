@@ -9,24 +9,24 @@
 
 % ============ (a) Order-Execute-Commit ============
 \begin{scope}[local bounding box=protocola]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
+  \def\colC{0}  \def\colA{1.6}  \def\colB{2.8}  \def\colN{4.0}  \def\colO{5.8}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=1.3cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
 
   % Step 1: Client -> Ordering Service
-  \draw[msg] (\colC,-0.45) -- node[above] {$T_i$} (\colO,-0.45);
+  \draw[msg] (\colC,-0.45) -- node[above, pos=0.12] {$T_i$} (\colO,-0.45);
   \node at (\colC-0.35,-0.45) {\cstep{1}};
 
   % Step 2: Block creation
   \node at ($({\colN},0)!0.75!({\colO},0)+(0,-0.92)$) {\cstep{2}};
-  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
+  \node[align=center, font=\normalsize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
 
   % Step 3: Broadcast block
   \draw[bcast] (\colO,-1.35) -- node[above] {block} (\colA,-1.35);
@@ -51,18 +51,18 @@
     \cstep{1}\,\cstep{2}\,\cstep{3}\;Ordering\quad \cstep{4}\;Execution\quad \cstep{5}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\normalsize] at (protocola.south) {(a) Order-Execute-Commit};
+\node[below=0.02cm,font=\normalsize, align=center] at (protocola.south) {(a) Order-Execute-Commit\\[-1pt]{\footnotesize (Ethereum~\cite{ethereum}, Quorum~\cite{Quorum}, Besu~\cite{besu})}};
 
 
 % ============ (b) Execute-Order-In-Parallel & Commit ============
 \begin{scope}[xshift=7.8cm, local bounding box=protocolb]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
+  \def\colC{0}  \def\colA{1.6}  \def\colB{2.8}  \def\colN{4.0}  \def\colO{5.8}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=1.3cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.0);
@@ -82,7 +82,7 @@
 
   % Step 2: Ordering (parallel with execution)
   \node at ($({\colN},0)!0.75!({\colO},0)+(0,-0.92)$) {\cstep{2}};
-  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
+  \node[align=center, font=\normalsize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-0.92)$) {block\\[-1pt]creation};
 
   % Step 3: Block broadcast
   \draw[bcast] (\colO,-1.45) -- node[above] {block} (\colA,-1.45);
@@ -101,18 +101,18 @@
     \cstep{1}\,\cstep{2}\;Execution \& Ordering\quad \cstep{3}\;Block Delivery\quad \cstep{4}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\normalsize] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit};
+\node[below=0.02cm,font=\normalsize, align=center] at (protocolb.south) {(b) Execute-Order-In-Parallel \& Commit\\[-1pt]{\footnotesize (BlockchainRDBMS~\cite{pgchain})}};
 
 
 % ============ (c) Execute-Order-Validate-Commit ============
 \begin{scope}[xshift=16.4cm, local bounding box=protocolc]
-  \def\colC{0}  \def\colA{1.2}  \def\colB{2.4}  \def\colN{3.6}  \def\colO{5.8}
+  \def\colC{0}  \def\colA{1.8}  \def\colB{3.0}  \def\colN{4.2}  \def\colO{6.4}
 
   \node[hdr] at (\colC,0) {Client};
   \node[hdr] at (\colA,0) {Peer 1};
   \node[hdr] at (\colB,0) {Peer 2};
   \node[hdr] at (\colN,0) {Peer n};
-  \node[hdr, text width=0.9cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
+  \node[hdr, text width=1.3cm, align=center, font=\normalsize] at (\colO,0) {Ordering\\[-1pt]Service};
 
   \foreach \x in {\colC,\colA,\colB,\colN,\colO}
     \draw[lifeline] (\x,-0.2) -- (\x,-3.65);
@@ -123,20 +123,20 @@
 
   % Step 2: Simulation
   \node[right] at (\colA+0.12,-0.78) {simulation};
-  \node at (\colA-0.35,-0.78) {\cstep{2}};
+  \node at (\colA+0.65,-0.48) {\cstep{2}};
 
   % Step 3: Response
   \draw[msg] (\colA,-1.08) -- (\colC,-1.08);
-  \node[above] at ($({\colC},-1.08)!0.5!({\colA},-1.08)$) {response};
+  \node[above] at ($({\colC},-1.08)!0.5!({\colA},-1.08)$) {$[T_i$, RWSet$]$};
   \node at (\colC-0.35,-1.08) {\cstep{3}};
 
   % Step 4: Client -> Ordering Service
-  \draw[msg] (\colC,-1.45) -- node[above] {$[T_i$, RWSet$]$} (\colO,-1.45);
+  \draw[msg] (\colC,-1.45) -- node[above] {$[T_i$, RWSet, Endorsements$]$} (\colO,-1.45);
   \node at (\colC-0.35,-1.45) {\cstep{4}};
 
   % Step 5: Block creation + broadcast
   \node at ($({\colN},0)!0.75!({\colO},0)+(0,-1.77)$) {\cstep{5}};
-  \node[align=center, font=\footnotesize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-1.77)$) {block\\[-1pt]creation};
+  \node[align=center, font=\normalsize, anchor=west] at ($({\colN},0)!0.75!({\colO},0)+(0.15,-1.77)$) {block\\[-1pt]creation};
   \draw[bcast] (\colO,-2.1) -- node[above] {block} (\colA,-2.1);
   \draw[bcast] (\colO,-2.1) -- (\colB,-2.1);
   \draw[bcast] (\colO,-2.1) -- (\colN,-2.1);
@@ -160,6 +160,6 @@
     \cstep{6}\;Validation\quad \cstep{7}\;Commit%
   };
 \end{scope}
-\node[below=0.02cm,font=\normalsize] at (protocolc.south) {(c) Simulate-Order-Validate-Commit};
+\node[below=0.02cm,font=\normalsize, align=center] at (protocolc.south) {(c) Simulate-Order-Validate-Commit\\[-1pt]{\footnotesize (Hyperledger Fabric~\cite{hf})}};
 
 \end{tikzpicture}
